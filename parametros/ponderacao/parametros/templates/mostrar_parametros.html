@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Parâmetros de Sustentabilidade</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .nav-menu {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .nav-menu a {
+            text-decoration: none;
+            color: #2c3e50;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        .nav-menu a:hover {
+            background-color: #f5f5f5;
+        }
+        .media-info {
+            text-align: center;
+            margin-bottom: 20px;
+            font-style: italic;
+            color: #555;
+        }
+        .parametro {
+            border-bottom: 1px solid #ddd;
+            padding: 15px 0;
+            margin-bottom: 15px;
+        }
+        .parametro h2 {
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+        .parametro-desc {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        .notas {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 8px;
+        }
+        .nota {
+            padding: 5px;
+        }
+        .nota-valor {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Parâmetros de Sustentabilidade</h1>
+
+    <div class="nav-menu">
+        <a href="">Cadastro</a>
+        <a href="">Relatório</a>
+        <a href="">Ações</a>
+    </div>
+
+    <div class="media-info">
+        A nota final será obtida a partir do cálculo da média das notas de cada parâmetro.
+    </div>
+
+    {% for parametro in parametros %}
+    <div class="parametro">
+        <h2>{{ parametro.nome }}</h2>
+        <p class="parametro-desc">{{ parametro.descricao }}</p>
+
+        <div class="notas">
+            {% for nota in parametro.notas %}
+            <div class="nota">
+                <span class="nota-valor">Nota {{ nota.valor }}:</span> {{ nota.descricao }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</body>
+</html>
