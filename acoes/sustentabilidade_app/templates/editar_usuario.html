@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Usuário</title>
+    <style>
+        /* Estilo para o botão de editar mais bonito */
+        .btn-editar {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            border: none;
+            font-size: 16px;
+        }
+        .btn-editar:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Editar Usuário: {{ usuario.nome }}</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn-editar">Salvar Alterações</button>
+    </form>
+
+    <br>
+    <a href="{% url 'lista_usuarios' %}" class="btn-editar">Voltar para a lista</a>
+
+</body>
+</html>

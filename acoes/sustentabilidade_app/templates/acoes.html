@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugestões de ações</title>
+</head>
+<body>
+    <h1>Sugestões para {{ usuario.nome }}</h1> <!--Cabeçalho-->
+    <h2>Consumo de água {{ nota.0 }}</h2> <!--2° Parâmetro-->
+    <p>{{ acao.0 }}</p>
+    
+    <h2>Consumo de energia {{ nota.1 }}</p></h2> <!--1° Parâmetro-->
+    <p>{{ acao.1 }}</p>
+
+    <h2>Uso de transporte {{ nota.2 }}</h2> <!--4° Parâmetro-->
+    <p>{{ acao.2 }}</p>
+
+    <h2>Geração de residuos não recicláveis {{ nota.3 }}</h2> <!--3° Parâmetro-->
+    <p>{{ acao.3 }}</p>
+
+    <a href="{% url 'detalhes_usuario' usuario.id %}" class="usuario-link">Voltar</a>
+</body>
+</html>
