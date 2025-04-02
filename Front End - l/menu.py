@@ -1,4 +1,5 @@
 import getpass #getpass é para censurar, só que eu nao sei como usar
+from datetime import date #para pegar a data atual
 
 print('\t\t\t\t\t==========================================================')
 print('\t\t\t\t\t|  BEM-VINDO AO SISTEMA DE CÁLCULO DE SUSTENTABILIDADE  |')
@@ -13,6 +14,8 @@ print('| PARA CÁLCULO MAIS PRECISO, CONFIRA A ABA PARÂMETROS PARA REALIZAR AS 
 print('====================================================================================================')
 
 usuarios = {} #simular bd
+registros = [] #bd provisório, é 2D. Não é separado por usuário
+
 #ADICIONAR EMAIL P/ RECUPERAÇÃO DE SENHA
 def cadastro():
     print('\n                                       CADASTRO')
@@ -80,18 +83,103 @@ def menu_login(usuario):
         print('====================================================================================================')
 
         opcao = input('Escolha uma opção (1-7): ')
+        if opcao == '1': #por as outras opções em cima, em ordem(depois substituir por elif)
+            print('Navegando para tela de cadastro...')
+            cadastro_inf(usuario)
         if opcao == '7': #por as outras opções em cima, em ordem(depois substituir por elif)
             print('Voltando a área de login...')
             break
 
+def cadastro_inf(usuario):
+    while True:
+        print('\n                                       CADASTRO DE INFORMAÇÕES')
+        print('====================================================================================================')
+        print(f'| * Usuário: {usuario}                                                                                     |')
+        print('|--------------------------------------------------------------------------------------------------|\n')
+        
+        data=date.today() #pegando data atual
+        print(f'Data do registro: {data}')
 
+        #entrada de dados, sem try/except por enquanto
+        energia=float(input("Informe seu consumo de energia (kW/dia): "))
+        agua=float(input("Informe seu consumo de energia (L/dia): "))
+        residuo=float(input("Informe sua geração de resíduos recicláveis (%): "))
+
+        #cabeçalho explicando o último input
+        print("PV - Privado\nPU - Público e privado\nPU - Público\nE - Elétrico\nBC - Bicleta e/ou caminhada") 
+        transporte=input("Informe o tipo de transporte utilizado (PV/PVU/PU/E/BC): ").upper() #upper() transforma em maiúsculo
+
+        calculo = [] #inicializando vetor
+
+        #formato: [data, nota_energia, nota_água, nota_resíduo, nota_transporte, nota_sustentabilidade]
+        calculo[:] = (data,*calcular_nota(energia,agua,residuo,transporte)) #atribui data e os retornos da função no vetor calculo
+        registros.append(calculo) #faço o registro
+
+        print(f'\nNota geral: {calculo}')
+        print(f'\nNota geral: {calculo[5]}') #apresento a nota
+        
+        menu_login(usuario) #voltando para o menu
+        break
+
+def calcular_nota(energia,agua,residuo,transporte):
+
+    #Cálculo do parâmetro de água
+    if(agua>250):
+        n_agua=1
+    elif(agua>=200 and agua<=250):
+        n_agua=2
+    elif(agua>=150 and agua<=199):
+        n_agua=3
+    elif(agua>=100 and agua<=149):
+        n_agua=4
+    else:
+        n_agua=5
+
+    #Cálculo do parâmetro de energia
+    if(energia>15):
+        n_energia=1
+    elif(energia>=12 and energia<=15):
+        n_energia=2
+    elif(energia>=8 and energia<=11):
+        n_energia=3
+    elif(energia>=5 and energia<=8):
+        n_energia=4
+    else:
+        n_energia=5
+
+    #Cálculo do parâmetro de resíduos
+    if(residuo>50):
+        n_residuo=5
+    elif(residuo>=41 and residuo<=50):
+        n_residuo=4
+    elif(residuo>=31 and residuo<=40):
+        n_residuo=3
+    elif(residuo>=20 and residuo<=30):
+        n_residuo=2
+    else:
+        n_residuo=1
+
+    #Cálculo do parâmetro de transporte
+    if(transporte=='PV'): 
+        n_transporte=1
+    elif(transporte=='PVU'):
+        n_transporte=2
+    elif(transporte=='PU'):
+        n_transporte=3
+    elif(transporte=='E'):
+        n_transporte=4
+    elif(transporte=='BC'):
+        n_transporte=5
+
+    #Média geral
+    n_sustentabilidade=(n_energia+n_agua+n_residuo+n_transporte)/4
+    return n_energia,n_agua,n_residuo,n_transporte,n_sustentabilidade
 
 area_login()
 
-#CADASTRO DE INFORMAÇÕES: abrir parte de inserir as informações de cada parametro, calcular (usa a tabela de parametros que está figma)
+#CADASTRO DE INFORMAÇÕES: abrir parte de inserir as informações de cada parametro, calcular (usar a tabela de parametros que está no figma)
 #LISTA DE GRÁFICOS: colocar opções de período (gráficos da semana, do dia e do mês) e criar gráfico com base nos cadastros de informações
 #AÇÕES: mostrar as notas do último cadastro e recomendar ações para melhora com base nisso
 #RELATÓRIO: mostrar as notas dos 3 ultimos cadastros, simbolizar se melhorou ou se piorou
 #PARÂMETROS: colocar a tabela de parâmetros
 #HISTÓRICO DE CADASTROS: mostrar todos os outros cadastros e opção de editar informação
-
