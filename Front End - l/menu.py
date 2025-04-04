@@ -14,7 +14,7 @@ print('| PARA CÁLCULO MAIS PRECISO, CONFIRA A ABA PARÂMETROS PARA REALIZAR AS 
 print('====================================================================================================')
 
 usuarios = {} #simular bd
-registros = [] #bd provisório, é 2D. Não é separado por usuário
+registros = {} #guarda valores em matrizes 2D. registros[chave][matriz][valor da matriz] 
 
 #ADICIONAR EMAIL P/ RECUPERAÇÃO DE SENHA
 def cadastro():
@@ -33,6 +33,7 @@ def cadastro():
         print('* ❌ Erro: As senhas não coincidem!')
     else:
         usuarios[usuario] = senha #salvar a senha ao usuario
+        registros[usuario] = [] #cria uma chave
         print('* ✅ Cadastro realizado com sucesso!')
     print('====================================================================================================')
 
@@ -98,29 +99,43 @@ def cadastro_inf(usuario):
         print('|--------------------------------------------------------------------------------------------------|\n')
         
         data=date.today() #pegando data atual
-        print(f'Data do registro: {data}')
+        print(f'Data do registro: {data}\n')
 
-        #entrada de dados, sem try/except por enquanto
-        energia=float(input("Informe seu consumo de energia (kW/dia): "))
-        agua=float(input("Informe seu consumo de energia (L/dia): "))
-        residuo=float(input("Informe sua geração de resíduos recicláveis (%): "))
-
-        #cabeçalho explicando o último input
-        print("PV - Privado\nPU - Público e privado\nPU - Público\nE - Elétrico\nBC - Bicleta e/ou caminhada") 
-        transporte=input("Informe o tipo de transporte utilizado (PV/PVU/PU/E/BC): ").upper() #upper() transforma em maiúsculo
+        try:
+            energia=float(input("Informe seu consumo de energia (kW/dia): "))
+            agua=float(input("Informe seu consumo de energia (L/dia): "))
+            residuo=float(input("Informe sua geração de resíduos recicláveis (%): "))
+            
+            #cabeçalho explicando o último input
+            print("\nPV - Privado\nPVU - Público e privado\nPU - Público\nE - Elétrico\nBC - Bicleta e/ou caminhada") 
+            transporte=input("Informe o tipo de transporte utilizado (PV/PVU/PU/E/BC): ").upper() #upper() transforma em maiúsculo
+            
+            #Verificando se a opção do transporte é válida
+            if transporte not in ["PV", "PVU", "PU", "E", "BC"]: 
+                raise #Leva para o except
+        except:
+            print("\nValor inválido inserindo, voltando para o menu...")
+            menu_login(usuario) #voltando para o menu
+            break
 
         calculo = [] #inicializando vetor
 
         #formato: [data, nota_energia, nota_água, nota_resíduo, nota_transporte, nota_sustentabilidade]
         calculo[:] = (data,*calcular_nota(energia,agua,residuo,transporte)) #atribui data e os retornos da função no vetor calculo
-        registros.append(calculo) #faço o registro
+        registros[usuario].append(calculo[:]) #faço o registro
 
-        print(f'\nNota geral: {calculo}')
-        print(f'\nNota geral: {calculo[5]}') #apresento a nota
+        print(f'\nNota eneriga:    {calculo[1]}') #apresento a nota
+        print(f'Nota água:       {calculo[2]}')
+        print(f'Nota resíduo:    {calculo[3]}')
+        print(f'Nota transporte: {calculo[4]}')
+        print(f'Nota geral:      {calculo[5]}') 
         
         menu_login(usuario) #voltando para o menu
         break
 
+def input_enter():
+    return
+    
 def calcular_nota(energia,agua,residuo,transporte):
 
     #Cálculo do parâmetro de água
