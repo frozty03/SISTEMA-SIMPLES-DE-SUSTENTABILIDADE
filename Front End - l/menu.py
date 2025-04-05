@@ -322,51 +322,87 @@ def grafico(usuario):
 
 def mostrar_tela_recomendacoes(usuario):
     limpar_tela()
-    print("\n" + "="*50)
+    print("\n" + "=" * 80)
     print(f"   ANÁLISE E RECOMENDAÇÕES - {usuario.upper()}")
-    print("="*50)
+    print("=" * 80)
 
     if usuario not in registros or not registros[usuario]:
-        print("* ❌ Nenhum dado encontrado. Faça um cadastro de informações primeiro.")
-        input("\nPressione ENTER para voltar ao menu.")
+        print("* ❌ Nenhum dado de sustentabilidade encontrado.")
+        input("\nPressione ENTER para voltar...")
         return
 
-    # pega o último registro do usuário
-    ultimo = registros[usuario][-1]
-    nota_energia = ultimo[1]
-    nota_agua = ultimo[2]
-    nota_residuo = ultimo[3]
-    nota_transporte = ultimo[4]
+    dados_atuais = registros[usuario][-1]  # Último registro
+    nota_energia = dados_atuais[1]
+    nota_agua = dados_atuais[2]
+    nota_residuo = dados_atuais[3]
+    nota_transporte = dados_atuais[4]
+
+    # Mapeamento das classificações baseado na tabela de parâmetros
+    classificacoes = {
+        "energia": {
+            1: "Alto consumo",
+            2: "Consumo elevado",
+            3: "Consumo moderado",
+            4: "Baixo consumo",
+            5: "Consumo excelente"
+        },
+        "agua": {
+            1: "Alto consumo",
+            2: "Consumo elevado",
+            3: "Consumo moderado",
+            4: "Baixo consumo",
+            5: "Consumo excelente"
+        },
+        "residuo": {
+            1: "Alto impacto",
+            2: "Impacto elevado",
+            3: "Impacto moderado",
+            4: "Baixo impacto",
+            5: "Impacto irrelevante"
+        },
+        "transporte": {
+            1: "Alto impacto",
+            2: "Impacto elevado",
+            3: "Impacto moderado",
+            4: "Baixo impacto",
+            5: "Nenhum impacto"
+        }
+    }
 
     dados = {
         "Consumo de energia": {
             "nota": nota_energia,
-            "recomendacao": "Troque lâmpadas incandescentes ou fluorescentes por LED, Evite deixar celular carregando a noite toda, Não deixe a porta da geladeira aberta por muito tempo"
+            "classificacao": classificacoes["energia"][nota_energia],
+            "recomendacao": "Trocar lâmpadas por LED, Evite deixar celular carregando a noite toda e Apague as luzes ao sair de um cômodo."
         },
         "Consumo de água": {
             "nota": nota_agua,
-            "recomendacao": "consertar possiveis vazamentos, Reduza o tempo no banho, Lave a louça com a torneira fechada: ensaboe tudo antes de enxaguar.."
+            "classificacao": classificacoes["agua"][nota_agua],
+            "recomendacao": "Instalar redutores de vazão, consertar vazamentos e reduzir tempo do banho."
         },
         "Geração de resíduos": {
             "nota": nota_residuo,
-            "recomendacao": "Implantar coleta seletiva e reduzir o uso de descartáveis."
+            "classificacao": classificacoes["residuo"][nota_residuo],
+            "recomendacao": "Separar o lixo reciclável, evitar descartáveis e reutilizar embalagens."
         },
         "Uso de transporte": {
             "nota": nota_transporte,
-            "recomendacao": "Estimular caronas, uso de bicicleta ou transporte público."
+            "classificacao": classificacoes["transporte"][nota_transporte],
+            "recomendacao": "Usar bicicleta, transporte público ou incentivar caronas e veículos elétricos."
         }
     }
 
     for acao, info in dados.items():
         print(f"\n🔹 {acao}")
-        print(f"   Nota: {info['nota']}")
+        print(f"   Nota: {info['nota']} - {info['classificacao']}")
         if info["nota"] < 5:
             print(f"   🔧 Recomendações: {info['recomendacao']}")
         else:
-            print("   ✅ Continue assim!")
+            print("   ✅ Excelente! Continue assim!")
 
     print("\nPressione ENTER para voltar ao menu.")
     input()
+
 
 
 area_login()
