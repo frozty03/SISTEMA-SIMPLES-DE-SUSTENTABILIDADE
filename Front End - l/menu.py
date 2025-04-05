@@ -1,5 +1,4 @@
-import getpass  # getpass é para censurar, só que eu nao sei como usar
-from datetime import date  # para pegar a data atual
+from datetime import date
 import os
 from tabulate import tabulate
 
@@ -155,8 +154,7 @@ def parametros(usuario):
             print(tabulate(i['dados'], headers='firstrow', tablefmt='grid'))
         opcao = input('\nAperte ENTER para retornar ao menu: ')
         if opcao == '':
-            menu_login(usuario)
-            break
+            return
 
 
 def menu_login(usuario):
@@ -175,10 +173,10 @@ def menu_login(usuario):
         if opcao == '1':  # por as outras opções em cima, em ordem(depois substituir por elif)
             print('Navegando para tela de cadastro...')
             cadastro_inf(usuario)
-            break
+        elif opcao == '2':
+            grafico(usuario)
         elif opcao == '5':
             parametros(usuario)
-            break
         elif opcao == '6':  # por as outras opções em cima, em ordem(depois substituir por elif)
             print('Voltando a área de login...')
             break
@@ -211,8 +209,7 @@ def cadastro_inf(usuario):
                 raise  # Leva para o except
         except:
             print("\nValor inválido inserido, voltando para o menu...")
-            menu_login(usuario)  # voltando para o menu
-            break
+            return
 
         calculo = []  # inicializando vetor
 
@@ -227,8 +224,7 @@ def cadastro_inf(usuario):
         print(f'Nota transporte: {calculo[4]}')
         print(f'Nota geral:      {calculo[5]}')
 
-        menu_login(usuario)  # voltando para o menu
-        break
+        return
 
 
 def input_enter():
@@ -289,10 +285,39 @@ def calcular_nota(energia, agua, residuo, transporte):
     return n_energia, n_agua, n_residuo, n_transporte, n_sustentabilidade
 
 
+def grafico(usuario):
+    limpar_tela()
+    print('\n                                     GRÁFICO DE NOTAS')
+    print('====================================================================================================')
+    print('|                     GRÁFICO CONSTRUIDO COM BASE NOS ÚLTIMOS 5 REGISTROS                          |')
+    print('====================================================================================================')
+
+    if usuario not in registros or not registros[usuario]:
+        print("* ❌ Nenhum registro encontrado!")
+        input("\nPressione ENTER para voltar...")
+        return
+
+    registros_usuario = registros[usuario][-5:]  # pegar os ultimos 5 registros
+    datas = [r[0].strftime('%d/%m') for r in registros_usuario]
+    notas = [r[5] for r in registros_usuario]
+
+    # desenho do gráfico
+    print(f"\nEvolução da nota de sustentabilidade - {usuario}")
+    print(f"Datas: {' | '.join(datas)}\n") #pegar as datas dos registros
+
+    for y in range(5, 0, -1):  # notas de 5 a 1
+        linha = f"{y} | "
+        for nota in notas:
+            linha += "■ " if nota >= y else "  "
+        print(linha)
+
+    print("  +" + "―" * (len(notas) * 2))
+    print("    " + " ".join(str(i + 1) for i in range(len(notas))))
+
+    opcao = input("\nAperte ENTER para retornar ao menu: ")
+    if opcao == '':
+        return
+
+
 area_login()
 
-# CADASTRO DE INFORMAÇÕES: abrir parte de inserir as informações de cada parametro, calcular (usar a tabela de parametros que está no figma)
-# LISTA DE GRÁFICOS: colocar opções de período (gráficos da semana, do dia e do mês) e criar gráfico com base nos cadastros de informações
-# AÇÕES: mostrar as notas do último cadastro e recomendar ações para melhora com base nisso
-# RELATÓRIO: mostrar as notas dos 3 ultimos cadastros, simbolizar se melhorou ou se piorou
-# PARÂMETROS: colocar a tabela de parâmetros
