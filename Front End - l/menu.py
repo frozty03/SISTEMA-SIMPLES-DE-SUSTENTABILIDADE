@@ -331,13 +331,13 @@ def mostrar_tela_recomendacoes(usuario):
         input("\nPressione ENTER para voltar...")
         return
 
-    dados_atuais = registros[usuario][-1]  # Último registro
+    dados_atuais = registros[usuario][-1] 
     nota_energia = dados_atuais[1]
     nota_agua = dados_atuais[2]
     nota_residuo = dados_atuais[3]
     nota_transporte = dados_atuais[4]
 
-    # Mapeamento das classificações baseado na tabela de parâmetros
+
     classificacoes = {
         "energia": {
             1: "Alto consumo",
@@ -396,7 +396,7 @@ def mostrar_tela_recomendacoes(usuario):
         print(f"\n🔹 {acao}")
         print(f"   Nota: {info['nota']} - {info['classificacao']}")
         if info["nota"] < 5:
-            print(f"   🔧 Recomendações: {info['recomendacao']}")
+            print(f"   Recomendações: {info['recomendacao']}")
         else:
             print("   ✅ Excelente! Continue assim!")
 
