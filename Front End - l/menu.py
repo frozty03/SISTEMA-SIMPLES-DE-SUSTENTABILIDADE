@@ -331,14 +331,14 @@ def mostrar_tela_recomendacoes(usuario):
         input("\nPressione ENTER para voltar...")
         return
 
-    dados_atuais = registros[usuario][-1] 
+    dados_atuais = registros[usuario][-1] #Ultimo Registro
     nota_energia = dados_atuais[1]
     nota_agua = dados_atuais[2]
     nota_residuo = dados_atuais[3]
     nota_transporte = dados_atuais[4]
 
 
-    classificacoes = {
+    classificacoes = { #Classificacoes de consumo
         "energia": {
             1: "Alto consumo",
             2: "Consumo elevado",
@@ -369,7 +369,7 @@ def mostrar_tela_recomendacoes(usuario):
         }
     }
 
-    dados = {
+    dados = { #Nota e possiveis recomendacoes
         "Consumo de energia": {
             "nota": nota_energia,
             "classificacao": classificacoes["energia"][nota_energia],
@@ -398,9 +398,9 @@ def mostrar_tela_recomendacoes(usuario):
         if info["nota"] < 5:
             print(f"   Recomendações: {info['recomendacao']}")
         else:
-            print("   ✅ Excelente! Continue assim!")
+            print("   ✅ Excelente! Continue assim!") #caso nao haja recomendacoes
 
-    print("\nPressione ENTER para voltar ao menu.")
+    print("\nPressione ENTER para voltar ao menu.") 
     input()
 
 
