@@ -175,6 +175,8 @@ def menu_login(usuario):
             cadastro_inf(usuario)
         elif opcao == '2':
             grafico(usuario)
+        elif opcao == '3':
+             mostrar_tela_recomendacoes(usuario)
         elif opcao == '5':
             parametros(usuario)
         elif opcao == '6':  # por as outras opções em cima, em ordem(depois substituir por elif)
@@ -317,6 +319,54 @@ def grafico(usuario):
     opcao = input("\nAperte ENTER para retornar ao menu: ")
     if opcao == '':
         return
+
+def mostrar_tela_recomendacoes(usuario):
+    limpar_tela()
+    print("\n" + "="*50)
+    print(f"   ANÁLISE E RECOMENDAÇÕES - {usuario.upper()}")
+    print("="*50)
+
+    if usuario not in registros or not registros[usuario]:
+        print("* ❌ Nenhum dado encontrado. Faça um cadastro de informações primeiro.")
+        input("\nPressione ENTER para voltar ao menu.")
+        return
+
+    # pega o último registro do usuário
+    ultimo = registros[usuario][-1]
+    nota_energia = ultimo[1]
+    nota_agua = ultimo[2]
+    nota_residuo = ultimo[3]
+    nota_transporte = ultimo[4]
+
+    dados = {
+        "Consumo de energia": {
+            "nota": nota_energia,
+            "recomendacao": "Troque lâmpadas incandescentes ou fluorescentes por LED, Evite deixar celular carregando a noite toda, Não deixe a porta da geladeira aberta por muito tempo"
+        },
+        "Consumo de água": {
+            "nota": nota_agua,
+            "recomendacao": "consertar possiveis vazamentos, Reduza o tempo no banho, Lave a louça com a torneira fechada: ensaboe tudo antes de enxaguar.."
+        },
+        "Geração de resíduos": {
+            "nota": nota_residuo,
+            "recomendacao": "Implantar coleta seletiva e reduzir o uso de descartáveis."
+        },
+        "Uso de transporte": {
+            "nota": nota_transporte,
+            "recomendacao": "Estimular caronas, uso de bicicleta ou transporte público."
+        }
+    }
+
+    for acao, info in dados.items():
+        print(f"\n🔹 {acao}")
+        print(f"   Nota: {info['nota']}")
+        if info["nota"] < 5:
+            print(f"   🔧 Recomendações: {info['recomendacao']}")
+        else:
+            print("   ✅ Continue assim!")
+
+    print("\nPressione ENTER para voltar ao menu.")
+    input()
 
 
 area_login()
