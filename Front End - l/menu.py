@@ -2,7 +2,6 @@ from datetime import date #para pegar a data atual
 import os
 from tabulate import tabulate
 
-
 def limpar_tela():
     os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -22,12 +21,11 @@ print('=========================================================================
 
 usuarios = {}  # simular bd
 registros = {}  # guarda valores em matrizes 2D. registros[chave][matriz][valor da matriz]
-
-
+nota_sus = {}
 # ADICIONAR EMAIL P/ RECUPERAÇÃO DE SENHA
 def cadastro():
     limpar_tela()
-    print('\n                                       CADASTRO')
+    print('\n                                              CADASTRO                                              ')
     print('====================================================================================================')
     usuario = input('* Digite um nome de usuário: ')
 
@@ -43,9 +41,9 @@ def cadastro():
     else:
         usuarios[usuario] = senha  # salvar a senha ao usuario
         registros[usuario] = []  # cria uma chave
+        nota_sus[usuario] = 0  # cria uma chave
         print('* ✅ Cadastro realizado com sucesso!')
     print('====================================================================================================')
-
 
 # ADICIONAR OPÇÃO P RECUPERAR SENHA
 def login():
@@ -66,7 +64,7 @@ def login():
 def area_login():
     while True:
         limpar_tela()
-        print('\n                                       ÁREA DE LOGIN')
+        print('                                            ÁREA DE LOGIN                                           ')
         print('====================================================================================================')
         print('|             1. Cadastrar         |          2. Login          |          3. Sair                 |')
         print('====================================================================================================')
@@ -147,9 +145,9 @@ def parametros(usuario):
         print('=' * 60)
 
         for i in tabela_parametros:
-            print(f'\n{i['titulo']}')
-            print(f'Descrição: {i['descricao']}')
-            print(tabulate(i['dados'], headers='firstrow', tablefmt='grid'))
+            print(f'\n{i["titulo"]}')
+            print(f'Descrição: {i["descricao"]}')
+            print(tabulate(i["dados"], headers='firstrow', tablefmt='grid'))
         opcao = input('\nAperte ENTER para retornar ao menu: ')
         if opcao == '':
             return
@@ -157,20 +155,19 @@ def parametros(usuario):
 def menu_login(usuario):
     while True:
         limpar_tela()
-        print('\n                                             MENU')
+        calcular_sus(usuario)
+        print('\n                                                MENU                                                ')
         print('====================================================================================================')
-        print(
-            f'| * Usuário: {usuario}                                                                                     |')
+        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus[usuario],2):<23} |')
         print('|--------------------------------------------------------------------------------------------------|')
         print('|    1. Cadastro de informações | 2. Lista de gráficos | 3. Ações (recomendações) | 4. Relatório   |')
         print('|                                  5. Parâmetros   |    6. Sair                                    |')
         print('====================================================================================================')
 
-
         opcao = input('Escolha uma opção (1-6): ')
         if opcao == '1':  # por as outras opções em cima, em ordem(depois substituir por elif)
             print('Navegando para tela de cadastro...')
-            cadastro_inf(usuario)
+            cadastro_tela(usuario)
         elif opcao == '2':
             grafico(usuario)
         elif opcao == '3':
@@ -183,14 +180,13 @@ def menu_login(usuario):
             print('Voltando a área de login...')
             break
 
-
-def cadastro_inf(usuario):
+def cadastro_tela(usuario): #Tela do cadastro
     while True:
         limpar_tela()
-        print('\n                                       CADASTRO DE INFORMAÇÕES')
+        calcular_sus(usuario)
+        print('\n                                       CADASTRO DE INFORMAÇÕES                                      ')
         print('====================================================================================================')
-        print(
-            f'| * Usuário: {usuario}                                                                                     |')
+        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus[usuario],2):<24}|')
         print('|--------------------------------------------------------------------------------------------------|\n')
 
         data=(date.today()).strftime("%Y-%m-%d") #pegando data atual ejá convertendo para string
@@ -204,7 +200,6 @@ def cadastro_inf(usuario):
         print(f'Nota resíduo:    {calculo[3]}')
         print(f'Nota transporte: {calculo[4]}')
         print(f'Nota geral:      {calculo[5]}') 
-        
         menu_login(usuario) #voltando para o menu
         return
 
@@ -230,9 +225,20 @@ def cadastro_calculo(usuario, data): #Entrada de dados e cálculo das notas
 
     #formato: [data, nota_energia, nota_água, nota_resíduo, nota_transporte, nota_sustentabilidade]
     calculo[:] = (data,*calcular_nota(energia,agua,residuo,transporte)) #atribui data e os retornos da função no vetor calculo
+    if(nota_sus[usuario]==0): #Caso for a primeira vez calculando a nota
+        nota_sus[usuario] = calculo[5]
+    else: #Pega a média de todas as notas
+        calcular_sus(usuario)
     return calculo
 
+def calcular_sus(usuario):
+    if(nota_sus[usuario]!=0):
+        soma=0
+        for i in range(len(registros[usuario])):
+            soma += registros[usuario][i][5]  # Acessa o índice 2 de cada sublista (último valor)
+        nota_sus[usuario] = soma/len(registros[usuario][:])
 
+#Cálculo da nota dos parâmetros
 def calcular_nota(energia, agua, residuo, transporte):
     # Cálculo do parâmetro de água
     if (agua > 250):
@@ -287,8 +293,9 @@ def calcular_nota(energia, agua, residuo, transporte):
     return n_energia, n_agua, n_residuo, n_transporte, n_sustentabilidade
 
 def grafico(usuario):
+    calcular_sus(usuario)
     limpar_tela()
-    print('\n                                     GRÁFICO DE NOTAS')
+    print('\n                                          GRÁFICO DE NOTAS                                          ')
     print('====================================================================================================')
     print('|                     GRÁFICO CONSTRUIDO COM BASE NOS ÚLTIMOS 5 REGISTROS                          |')
     print('====================================================================================================')
@@ -335,7 +342,6 @@ def mostrar_tela_recomendacoes(usuario):
     nota_agua = dados_atuais[2]
     nota_residuo = dados_atuais[3]
     nota_transporte = dados_atuais[4]
-
 
     classificacoes = { #Classificacoes de consumo
         "energia": {
@@ -402,8 +408,6 @@ def mostrar_tela_recomendacoes(usuario):
     print("\nPressione ENTER para voltar ao menu.") 
     input()
 
-
-
 def relatorio_calculo(nota): # retorna a classificacao de cada nota
     if(nota==1):
         return "elevado"
@@ -416,15 +420,22 @@ def relatorio_calculo(nota): # retorna a classificacao de cada nota
     elif(nota==5):
         return "ideal, parabéns!"
 
-# Função para criar a tabela
+# Função para criar a tela da tabela
 def Tabela_relatorio(usuario):
     limpar_tela()
-    print('\t\t\t\t\t======================================')
-    print('\t\t\t\t\t              RELATORIO               ')
-    print('\t\t\t\t\t======================================')
-    print("-------------------------------------------------------------------------------------------------------------------------")
+    calcular_sus(usuario)
+    print('=================================================================================================================================')
+    print('                                                      RELATÓRIO E HISTÓRICO                                                      ')
+    print('=================================================================================================================================')
+    print(f"Nota geral: {round(nota_sus[usuario],2)}\n")
     print(f"{'Registro n°':<15}{'Data':<15}{'Energia':<10}{'Água':<10}{'Resíduo':<10}{'Transporte':<15}{'Média':<10}{'Relatório':<20}")
-    print("-------------------------------------------------------------------------------------------------------------------------")
+    print("---------------------------------------------------------------------------------------------------------------------------------")
+    
+    if usuario not in registros or not registros[usuario]: #Verifica se há registros
+        print("* ❌ Nenhum dado de sustentabilidade encontrado.")
+        input("\nPressione ENTER para voltar...")
+        return
+    
     #:<10 "< indica alinhamento à esquerda, 10 indica o números de espaçoes que irá ocupar"
     i = 0
     vazio=''
@@ -435,10 +446,10 @@ def Tabela_relatorio(usuario):
        print(f"{vazio:<85}Consumo de água {relatorio_calculo(registros[usuario][i][2])}")
        print(f"{vazio:<85}Grau de geração de lixo {relatorio_calculo(registros[usuario][i][3])}")
        print(f"{vazio:<85}Índice do uso de transporte {relatorio_calculo(registros[usuario][i][4])}")
-       print("--------------------------------------------------------------------------------------------------------------------------")
+       print("----------------------------------------------------------------------------------------------------------------------------------")
        i=i+1
 
-    print("\nDigite o n° do registro que deseja alterar")
+    print("\nPara editar um registro, digite seu número")
     print("ou pressione ENTER para voltar ao menu")
     opcao = input("Informe sua ação: ")
     if opcao == '':
@@ -451,11 +462,9 @@ def Tabela_relatorio(usuario):
             
             #-1 pq os registros são enumerados a partir do 0, mas o usuário percebe a partir do 1
             data = registros[usuario][opcao-1][0]#pega a data do registro
-            print(data)
-            print(registros[usuario][opcao-1][:])
             registros[usuario][opcao-1][0]=data #altera o primeiro item
+            print()#pulando uma linha
             registros[usuario][opcao-1][:-5]=cadastro_calculo(usuario, data) #altera os 5 últimos itens
-            print(registros[usuario][opcao-1][:])
             Tabela_relatorio(usuario)
         except:
             return
