@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date #para pegar a data atual
 import os
 from tabulate import tabulate
 
@@ -6,8 +6,8 @@ from tabulate import tabulate
 def limpar_tela():
     os.system('cls' if os.name == 'nt' else 'clear')
 
-
 limpar_tela()
+
 print('\t\t\t\t\t==========================================================')
 print('\t\t\t\t\t|  BEM-VINDO AO SISTEMA DE CÁLCULO DE SUSTENTABILIDADE  |')
 print('\t\t\t\t\t==========================================================')
@@ -63,7 +63,6 @@ def login():
         print('* ❌ Erro: Usuário ou senha incorretos!')
         print('====================================================================================================')
 
-
 def area_login():
     while True:
         limpar_tela()
@@ -83,7 +82,6 @@ def area_login():
             break
         else:
             print('⚠️ Opção inválida! Tente novamente.')
-
 
 def parametros(usuario):
     while True:
@@ -156,7 +154,6 @@ def parametros(usuario):
         if opcao == '':
             return
 
-
 def menu_login(usuario):
     while True:
         limpar_tela()
@@ -169,6 +166,7 @@ def menu_login(usuario):
         print('|                                  5. Parâmetros   |    6. Sair                                    |')
         print('====================================================================================================')
 
+
         opcao = input('Escolha uma opção (1-6): ')
         if opcao == '1':  # por as outras opções em cima, em ordem(depois substituir por elif)
             print('Navegando para tela de cadastro...')
@@ -177,6 +175,8 @@ def menu_login(usuario):
             grafico(usuario)
         elif opcao == '3':
              mostrar_tela_recomendacoes(usuario)
+        if opcao=='4':
+            Tabela_relatorio(usuario)
         elif opcao == '5':
             parametros(usuario)
         elif opcao == '6':  # por as outras opções em cima, em ordem(depois substituir por elif)
@@ -193,44 +193,44 @@ def cadastro_inf(usuario):
             f'| * Usuário: {usuario}                                                                                     |')
         print('|--------------------------------------------------------------------------------------------------|\n')
 
-        data = date.today()  # pegando data atual
-        print(f'Data do registro: {data}')
-        print(f'Para retornar ao MENU: insira os valores ou aperte ENTER\n')
-        try:
-            energia = float(input("Informe seu consumo de energia (kW/dia): "))
-            agua = float(input("Informe seu consumo de energia (L/dia): "))
-            residuo = float(input("Informe sua geração de resíduos recicláveis (%): "))
+        data=(date.today()).strftime("%Y-%m-%d") #pegando data atual ejá convertendo para string
+        print(f'Data do registro: {data}\n')
 
-            # cabeçalho explicando o último input
-            print("\nPV - Privado\nPVU - Público e privado\nPU - Público\nE - Elétrico\nBC - Bicleta e/ou caminhada")
-            transporte = input(
-                "Informe o tipo de transporte utilizado (PV/PVU/PU/E/BC): ").upper()  # upper() transforma em maiúsculo
+        calculo = cadastro_calculo(usuario, data) #chamando a funcao
+        registros[usuario].append(calculo[:]) #faço o registro
 
-            # Verificando se a opção do transporte é válida
-            if transporte not in ["PV", "PVU", "PU", "E", "BC"]:
-                raise  # Leva para o except
-        except:
-            print("\nValor inválido inserido, voltando para o menu...")
-            return
-
-        calculo = []  # inicializando vetor
-
-        # formato: [data, nota_energia, nota_água, nota_resíduo, nota_transporte, nota_sustentabilidade]
-        calculo[:] = (data, *calcular_nota(energia, agua, residuo,
-                                           transporte))  # atribui data e os retornos da função no vetor calculo
-        registros[usuario].append(calculo[:])  # faço o registro
-
-        print(f'\nNota eneriga:    {calculo[1]}')  # apresento a nota
+        print(f'\nNota eneriga:  {calculo[1]}') #apresento a nota
         print(f'Nota água:       {calculo[2]}')
         print(f'Nota resíduo:    {calculo[3]}')
         print(f'Nota transporte: {calculo[4]}')
-        print(f'Nota geral:      {calculo[5]}')
-
+        print(f'Nota geral:      {calculo[5]}') 
+        
+        menu_login(usuario) #voltando para o menu
         return
 
+def cadastro_calculo(usuario, data): #Entrada de dados e cálculo das notas
+    try:
+        energia=float(input("Informe seu consumo de energia (kW/dia): "))
+        agua=float(input("Informe seu consumo de energia (L/dia): "))
+        residuo=float(input("Informe sua geração de resíduos recicláveis (%): "))
+            
+        #cabeçalho explicando o último input
+        print("\nPV - Privado\nPVU - Público e privado\nPU - Público\nE - Elétrico\nBC - Bicleta e/ou caminhada") 
+        transporte=input("Informe o tipo de transporte utilizado (PV/PVU/PU/E/BC): ").upper() #upper() transforma em maiúsculo
+            
+        #Verificando se a opção do transporte é válida
+        if transporte not in ["PV", "PVU", "PU", "E", "BC"]: 
+            raise #Leva para o except
+    except:
+        print("\nValor inválido inserindo, voltando para o menu...")
+        menu_login(usuario) #voltando para o menu
+        return
 
-def input_enter():
-    return
+    calculo = [] #inicializando vetor
+
+    #formato: [data, nota_energia, nota_água, nota_resíduo, nota_transporte, nota_sustentabilidade]
+    calculo[:] = (data,*calcular_nota(energia,agua,residuo,transporte)) #atribui data e os retornos da função no vetor calculo
+    return calculo
 
 
 def calcular_nota(energia, agua, residuo, transporte):
@@ -285,7 +285,6 @@ def calcular_nota(energia, agua, residuo, transporte):
     # Média geral
     n_sustentabilidade = (n_energia + n_agua + n_residuo + n_transporte) / 4
     return n_energia, n_agua, n_residuo, n_transporte, n_sustentabilidade
-
 
 def grafico(usuario):
     limpar_tela()
@@ -405,5 +404,67 @@ def mostrar_tela_recomendacoes(usuario):
 
 
 
+def relatorio_calculo(nota): # retorna a classificacao de cada nota
+    if(nota==1):
+        return "elevado"
+    elif(nota==2):
+        return "elevado"
+    elif(nota==3):
+        return "significativo"
+    elif(nota==4):
+        return "moderado"
+    elif(nota==5):
+        return "ideal, parabéns!"
+
+# Função para criar a tabela
+def Tabela_relatorio(usuario):
+    limpar_tela()
+    print('\t\t\t\t\t======================================')
+    print('\t\t\t\t\t              RELATORIO               ')
+    print('\t\t\t\t\t======================================')
+    print("-------------------------------------------------------------------------------------------------------------------------")
+    print(f"{'Registro n°':<15}{'Data':<15}{'Energia':<10}{'Água':<10}{'Resíduo':<10}{'Transporte':<15}{'Média':<10}{'Relatório':<20}")
+    print("-------------------------------------------------------------------------------------------------------------------------")
+    #:<10 "< indica alinhamento à esquerda, 10 indica o números de espaçoes que irá ocupar"
+    i = 0
+    vazio=''
+    while (i<len(registros[usuario])):
+       data_r= registros[usuario][i][0]
+       print(f"{i+1:<15}{data_r:<15}{registros[usuario][i][1]:<10}{registros[usuario][i][2]:<10}{registros[usuario][i][3]:<10}{registros[usuario][i][4]:<15}{registros[usuario][i][5]:<10}", end='')
+       print(f'Consumo de energia {relatorio_calculo(registros[usuario][i][1])}')
+       print(f"{vazio:<85}Consumo de água {relatorio_calculo(registros[usuario][i][2])}")
+       print(f"{vazio:<85}Grau de geração de lixo {relatorio_calculo(registros[usuario][i][3])}")
+       print(f"{vazio:<85}Índice do uso de transporte {relatorio_calculo(registros[usuario][i][4])}")
+       print("--------------------------------------------------------------------------------------------------------------------------")
+       i=i+1
+
+    print("\nDigite o n° do registro que deseja alterar")
+    print("ou pressione ENTER para voltar ao menu")
+    opcao = input("Informe sua ação: ")
+    if opcao == '':
+        return
+    else: #edição de registro
+        try: 
+            opcao = int(opcao) #verifica se o input é numérico
+            if(opcao>len(registros[usuario][:])): #verifica se o registro existe
+                raise #vai para o except
+            
+            #-1 pq os registros são enumerados a partir do 0, mas o usuário percebe a partir do 1
+            data = registros[usuario][opcao-1][0]#pega a data do registro
+            print(data)
+            print(registros[usuario][opcao-1][:])
+            registros[usuario][opcao-1][0]=data #altera o primeiro item
+            registros[usuario][opcao-1][:-5]=cadastro_calculo(usuario, data) #altera os 5 últimos itens
+            print(registros[usuario][opcao-1][:])
+            Tabela_relatorio(usuario)
+        except:
+            return
+    
 area_login()
 
+#CADASTRO DE INFORMAÇÕES: abrir parte de inserir as informações de cada parametro, calcular (usar a tabela de parametros que está no figma)
+#LISTA DE GRÁFICOS: colocar opções de período (gráficos da semana, do dia e do mês) e criar gráfico com base nos cadastros de informações
+#AÇÕES: mostrar as notas do último cadastro e recomendar ações para melhora com base nisso
+#RELATÓRIO: mostrar as notas dos 3 ultimos cadastros, simbolizar se melhorou ou se piorou
+#PARÂMETROS: colocar a tabela de parâmetros
+#HISTÓRICO DE CADASTROS: mostrar todos os outros cadastros e opção de editar informação1
