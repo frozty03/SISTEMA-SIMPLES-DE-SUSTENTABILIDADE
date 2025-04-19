@@ -1,9 +1,19 @@
 from datetime import date #para pegar a data atual
 import os
 from tabulate import tabulate
+import mysql.connector
 
 def limpar_tela():
     os.system('cls' if os.name == 'nt' else 'clear')
+
+conexao = mysql.connector.connect(
+    host="localhost", #Usando a rede local
+    user="root",
+    password="???", #Trocar ??? quando for testar
+    database="pi1"
+)
+
+cursor = conexao.cursor()
 
 limpar_tela()
 
@@ -21,7 +31,8 @@ print('=========================================================================
 
 usuarios = {}  # simular bd
 registros = {}  # guarda valores em matrizes 2D. registros[chave][matriz][valor da matriz]
-nota_sus = {}
+nota_sus = 0 # média geral do usuário
+
 # ADICIONAR EMAIL P/ RECUPERAÇÃO DE SENHA
 def cadastro():
     limpar_tela()
@@ -29,9 +40,12 @@ def cadastro():
     print('====================================================================================================')
     usuario = input('* Digite um nome de usuário: ')
 
-    if usuario in usuarios:
-        print('* ❌ Erro: Usuário já existe!')
-        return
+    #verifica os usuarios
+    cursor.execute("select u_usuario from usuario") 
+    for i in cursor: #percorre o select
+        if usuario ==(i[0]):
+            print('* ❌ Erro: Usuário já existe!')
+            return
 
     senha = input('* Digite uma senha: ')
     senha2 = input('* Confirme a senha: ')
@@ -39,9 +53,9 @@ def cadastro():
     if senha != senha2:
         print('* ❌ Erro: As senhas não coincidem!')
     else:
-        usuarios[usuario] = senha  # salvar a senha ao usuario
-        registros[usuario] = []  # cria uma chave
-        nota_sus[usuario] = 0  # cria uma chave
+        #adicionando no banco de dados
+        cursor.execute("insert into usuario (u_usuario,u_senha,u_nota) values (%s,%s,0)", (usuario,senha)) 
+        conexao.commit()
         print('* ✅ Cadastro realizado com sucesso!')
     print('====================================================================================================')
 
@@ -53,13 +67,17 @@ def login():
     usuario = input('* Usuário: ')
     senha = input('* Senha: ')
 
-    if usuario in usuarios and usuarios[usuario] == senha:  # se o usuario estiver no dict e a senha corresponder
-        print(f' ✅ Login bem-sucedido! Bem-vindo, {usuario}!')
-        print('====================================================================================================')
-        menu_login(usuario)  # iniciar o menu pós login
-    else:
-        print('* ❌ Erro: Usuário ou senha incorretos!')
-        print('====================================================================================================')
+    #verifica os usuarios
+    cursor.execute("select u_usuario,u_senha,u_nota from usuario") 
+    for i in cursor: #percorre o select
+        if usuario == i[0] and senha == i[1]: # verifica senha e usuário
+            print(f' ✅ Login bem-sucedido! Bem-vindo, {usuario}!')
+            print('====================================================================================================')
+            nota_sus=i[2]
+            menu_login(usuario)  # iniciar o menu pós login
+        else:
+            print('* ❌ Erro: Usuário ou senha incorretos!')
+            print('====================================================================================================')
 
 def area_login():
     while True:
@@ -158,7 +176,7 @@ def menu_login(usuario):
         calcular_sus(usuario)
         print('\n                                                MENU                                                ')
         print('====================================================================================================')
-        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus[usuario],2):<23} |')
+        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus,2):<23} |')
         print('|--------------------------------------------------------------------------------------------------|')
         print('|    1. Cadastro de informações | 2. Lista de gráficos | 3. Ações (recomendações) | 4. Relatório   |')
         print('|                                  5. Parâmetros   |    6. Sair                                    |')
@@ -186,7 +204,7 @@ def cadastro_tela(usuario): #Tela do cadastro
         calcular_sus(usuario)
         print('\n                                       CADASTRO DE INFORMAÇÕES                                      ')
         print('====================================================================================================')
-        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus[usuario],2):<24}|')
+        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus,2):<24}|')
         print('|--------------------------------------------------------------------------------------------------|\n')
 
         data=(date.today()).strftime("%Y-%m-%d") #pegando data atual ejá convertendo para string
@@ -232,7 +250,7 @@ def cadastro_calculo(usuario, data): #Entrada de dados e cálculo das notas
     return calculo
 
 def calcular_sus(usuario):
-    if(nota_sus[usuario]!=0):
+    if(nota_sus!=0):
         soma=0
         for i in range(len(registros[usuario])):
             soma += registros[usuario][i][5]  # Acessa o índice 2 de cada sublista (último valor)
