@@ -9,7 +9,7 @@ def limpar_tela():
 conexao = mysql.connector.connect(
     host="localhost", #Usando a rede local
     user="root",
-    password="???", #Trocar ??? quando for testar
+    password="1234", #Trocar ??? quando for testar
     database="pi1"
 )
 
@@ -44,6 +44,7 @@ def cadastro():
     cursor.execute("select u_usuario from usuario") 
     for i in cursor: #percorre o select
         if usuario ==(i[0]):
+            cursor.fetchall() #limpando cursor
             print('* ❌ Erro: Usuário já existe!')
             return
 
@@ -74,6 +75,7 @@ def login():
             print(f' ✅ Login bem-sucedido! Bem-vindo, {usuario}!')
             print('====================================================================================================')
             nota_sus=i[2]
+            cursor.fetchall() #limpando cursor
             menu_login(usuario)  # iniciar o menu pós login
         else:
             print('* ❌ Erro: Usuário ou senha incorretos!')
@@ -173,10 +175,10 @@ def parametros(usuario):
 def menu_login(usuario):
     while True:
         limpar_tela()
-        calcular_sus(usuario)
+        nota_sus = calcular_sus(usuario)
         print('\n                                                MENU                                                ')
         print('====================================================================================================')
-        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus,2):<23} |')
+        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus,2) if nota_sus is not None else 0:<23} |')
         print('|--------------------------------------------------------------------------------------------------|')
         print('|    1. Cadastro de informações | 2. Lista de gráficos | 3. Ações (recomendações) | 4. Relatório   |')
         print('|                                  5. Parâmetros   |    6. Sair                                    |')
@@ -201,19 +203,29 @@ def menu_login(usuario):
 def cadastro_tela(usuario): #Tela do cadastro
     while True:
         limpar_tela()
-        calcular_sus(usuario)
+        nota_sus = calcular_sus(usuario)
         print('\n                                       CADASTRO DE INFORMAÇÕES                                      ')
         print('====================================================================================================')
-        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus,2):<24}|')
+        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus,2) if nota_sus is not None else 0:<24}|')
         print('|--------------------------------------------------------------------------------------------------|\n')
 
-        data=(date.today()).strftime("%Y-%m-%d") #pegando data atual ejá convertendo para string
-        print(f'Data do registro: {data}\n')
+        data=date.today() #pegando data atual ejá convertendo para string
+        print(f'Data do registro: {data.strftime("%Y-%m-%d")}\n')
 
+        #procurando id do usuário
+        cursor.execute("select u_id from usuario where u_usuario = %s", (usuario,))
+        for i in cursor:
+            id_usuario=i[0]
         calculo = cadastro_calculo(usuario, data) #chamando a funcao
-        registros[usuario].append(calculo[:]) #faço o registro
+        
+        #fazendo o registro
+        cursor.execute("insert into registro (r_usuarioId,r_data,r_energia,r_agua,r_residuo,r_transporte,r_media)" \
+        "values (%s,%s,%s,%s,%s,%s,%s)", (id_usuario,calculo[0],calculo[1],calculo[2],calculo[3],calculo[4],calculo[5])) #faço o registro
+        conexao.commit()
 
-        print(f'\nNota eneriga:  {calculo[1]}') #apresento a nota
+        nota_sus = calcular_sus(usuario) #calculo da nota geral
+        
+        print(f'\nNota energia:  {calculo[1]}') #apresento a nota
         print(f'Nota água:       {calculo[2]}')
         print(f'Nota resíduo:    {calculo[3]}')
         print(f'Nota transporte: {calculo[4]}')
@@ -224,7 +236,7 @@ def cadastro_tela(usuario): #Tela do cadastro
 def cadastro_calculo(usuario, data): #Entrada de dados e cálculo das notas
     try:
         energia=float(input("Informe seu consumo de energia (kW/dia): "))
-        agua=float(input("Informe seu consumo de energia (L/dia): "))
+        agua=float(input("Informe seu consumo de água (L/dia): "))
         residuo=float(input("Informe sua geração de resíduos recicláveis (%): "))
             
         #cabeçalho explicando o último input
@@ -242,19 +254,21 @@ def cadastro_calculo(usuario, data): #Entrada de dados e cálculo das notas
     calculo = [] #inicializando vetor
 
     #formato: [data, nota_energia, nota_água, nota_resíduo, nota_transporte, nota_sustentabilidade]
-    calculo[:] = (data,*calcular_nota(energia,agua,residuo,transporte)) #atribui data e os retornos da função no vetor calculo
-    if(nota_sus[usuario]==0): #Caso for a primeira vez calculando a nota
-        nota_sus[usuario] = calculo[5]
-    else: #Pega a média de todas as notas
-        calcular_sus(usuario)
+    calculo[:] = (data.strftime("%Y-%m-%d"),*calcular_nota(energia,agua,residuo,transporte)) #atribui data e os retornos da função no vetor calculo
     return calculo
 
 def calcular_sus(usuario):
-    if(nota_sus!=0):
-        soma=0
-        for i in range(len(registros[usuario])):
-            soma += registros[usuario][i][5]  # Acessa o índice 2 de cada sublista (último valor)
-        nota_sus[usuario] = soma/len(registros[usuario][:])
+    nota_sus=0
+    #pegando média
+    cursor.execute("select avg(registro.r_media) from usuario, registro " \
+    "where usuario.u_id = registro.r_usuarioId and usuario.u_usuario= %s", (usuario,))
+    for i in cursor:
+        nota_sus=i[0]
+
+    #atualizando a tabela
+    cursor.execute("update usuario set u_nota = %s where u_usuario = %s", (nota_sus,usuario))
+    conexao.commit()
+    return nota_sus
 
 #Cálculo da nota dos parâmetros
 def calcular_nota(energia, agua, residuo, transporte):
@@ -441,11 +455,11 @@ def relatorio_calculo(nota): # retorna a classificacao de cada nota
 # Função para criar a tela da tabela
 def Tabela_relatorio(usuario):
     limpar_tela()
-    calcular_sus(usuario)
+    nota_sus = calcular_sus(usuario)
     print('=================================================================================================================================')
     print('                                                      RELATÓRIO E HISTÓRICO                                                      ')
     print('=================================================================================================================================')
-    print(f"Nota geral: {round(nota_sus[usuario],2)}\n")
+    print(f"Nota geral: {round(nota_sus,2) if nota_sus is not None else 0}\n")
     print(f"{'Registro n°':<15}{'Data':<15}{'Energia':<10}{'Água':<10}{'Resíduo':<10}{'Transporte':<15}{'Média':<10}{'Relatório':<20}")
     print("---------------------------------------------------------------------------------------------------------------------------------")
     
