@@ -9,7 +9,7 @@ def limpar_tela():
 conexao = mysql.connector.connect(
     host="localhost", #Usando a rede local
     user="root",
-    password="1234", #Trocar ??? quando for testar
+    password="???", #Trocar ??? quando for testar
     database="pi1"
 )
 
@@ -29,8 +29,10 @@ print('=========================================================================
 print('| PARA CÁLCULO MAIS PRECISO, CONFIRA A ABA PARÂMETROS PARA REALIZAR AS MEDIÇÕES DE CONSUMO.        |')
 print('====================================================================================================')
 
+#apagar quando a integração estiver completa
 usuarios = {}  # simular bd
 registros = {}  # guarda valores em matrizes 2D. registros[chave][matriz][valor da matriz]
+
 nota_sus = 0 # média geral do usuário
 
 # ADICIONAR EMAIL P/ RECUPERAÇÃO DE SENHA
