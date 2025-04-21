@@ -76,7 +76,6 @@ def login():
         if usuario == i[0] and senha == i[1]: # verifica senha e usuário
             print(f' ✅ Login bem-sucedido! Bem-vindo, {usuario}!')
             print('====================================================================================================')
-            nota_sus=i[2]
             cursor.fetchall() #limpando cursor
             menu_login(usuario)  # iniciar o menu pós login
         else:
@@ -464,41 +463,77 @@ def Tabela_relatorio(usuario):
     print(f"Nota geral: {round(nota_sus,2) if nota_sus is not None else 0}\n")
     print(f"{'Registro n°':<15}{'Data':<15}{'Energia':<10}{'Água':<10}{'Resíduo':<10}{'Transporte':<15}{'Média':<10}{'Relatório':<20}")
     print("---------------------------------------------------------------------------------------------------------------------------------")
-    
-    if usuario not in registros or not registros[usuario]: #Verifica se há registros
+
+    #identifica o id do usuário
+    cursor.execute("select u_id from usuario where u_usuario = %s", (usuario,))
+    for i in cursor:
+        id_usuario=i[0]
+   
+    #verifica se há registros
+    cursor.execute("select r_id from registro where r_usuarioId = %s", (id_usuario,))
+    select = cursor.fetchone()
+    if select is None: #caso não houver
         print("* ❌ Nenhum dado de sustentabilidade encontrado.")
         input("\nPressione ENTER para voltar...")
         return
-    
-    #:<10 "< indica alinhamento à esquerda, 10 indica o números de espaçoes que irá ocupar"
-    i = 0
-    vazio=''
-    while (i<len(registros[usuario])):
-       data_r= registros[usuario][i][0]
-       print(f"{i+1:<15}{data_r:<15}{registros[usuario][i][1]:<10}{registros[usuario][i][2]:<10}{registros[usuario][i][3]:<10}{registros[usuario][i][4]:<15}{registros[usuario][i][5]:<10}", end='')
-       print(f'Consumo de energia {relatorio_calculo(registros[usuario][i][1])}')
-       print(f"{vazio:<85}Consumo de água {relatorio_calculo(registros[usuario][i][2])}")
-       print(f"{vazio:<85}Grau de geração de lixo {relatorio_calculo(registros[usuario][i][3])}")
-       print(f"{vazio:<85}Índice do uso de transporte {relatorio_calculo(registros[usuario][i][4])}")
-       print("----------------------------------------------------------------------------------------------------------------------------------")
-       i=i+1
+    cursor.fetchall()
 
-    print("\nPara editar um registro, digite seu número")
-    print("ou pressione ENTER para voltar ao menu")
+    #consultando os registros
+    cursor.execute("select r_data,r_energia,r_agua,r_residuo,r_transporte,r_media,r_id " \
+    "from registro where r_usuarioId = %s", (id_usuario,))
+
+    j=0
+    registro_id = []
+    vazio=''
+    #:<10 "< indica alinhamento à esquerda, 10 indica o números de espaçoes que irá ocupar"
+    for i in cursor:
+        print(f"{j+1:<15}{i[0].strftime('%Y-%m-%d'):<15}{i[1]:<10}{i[2]:<10}{i[3]:<10}{i[4]:<15}{i[5]:<10}", end='')
+        print(f'Consumo de energia {relatorio_calculo(i[1])}')
+        print(f"{vazio:<85}Consumo de água {relatorio_calculo(i[2])}")
+        print(f"{vazio:<85}Grau de geração de lixo {relatorio_calculo(i[3])}")
+        print(f"{vazio:<85}Índice do uso de transporte {relatorio_calculo(i[4])}")
+        print("----------------------------------------------------------------------------------------------------------------------------------")
+        registro_id.append(i[6]) #armazena os id dos registros verificados
+        j+=1
+    
+    print("\nPara editar ou deletar um registro, digite seu número correspondente")
+    print("ou pressione ENTER para voltar ao menu\n")
     opcao = input("Informe sua ação: ")
     if opcao == '':
         return
     else: #edição de registro
         try: 
             opcao = int(opcao) #verifica se o input é numérico
-            if(opcao>len(registros[usuario][:])): #verifica se o registro existe
-                raise #vai para o except
+            #verifica se o registro existe
+            if(opcao<1 or opcao>len(registro_id)):
+                print("* ❌ O valor informado não corresponde a nenhum registro.")
+                input("\nPressione ENTER para voltar...")
+                return
             
-            #-1 pq os registros são enumerados a partir do 0, mas o usuário percebe a partir do 1
-            data = registros[usuario][opcao-1][0]#pega a data do registro
-            registros[usuario][opcao-1][0]=data #altera o primeiro item
-            print()#pulando uma linha
-            registros[usuario][opcao-1][:-5]=cadastro_calculo(usuario, data) #altera os 5 últimos itens
+            while(True):
+                escolha = input("Pressione E para editar ou D para deletar um registro: ")
+                if(escolha.upper() == 'E'):
+                    #refaz o calculo
+                    print()
+                    calculo = cadastro_calculo(usuario, date.today())
+                    print(calculo)
+                    #altera no bd
+                    cursor.execute("update registro set r_energia = %s," \
+                    "r_agua = %s," \
+                    "r_residuo = %s," \
+                    "r_transporte = %s," \
+                    "r_media = %s" \
+                    "where r_id = %s", (calculo[1],calculo[2],calculo[3],calculo[4],calculo[5],registro_id[opcao-1]))
+                    conexao.commit()
+                    break
+                elif(escolha.upper() == 'D'):
+                    cursor.execute("delete from registro where r_id = %s", (registro_id[opcao-1],))
+                    conexao.commit()
+                    break
+                else:
+                    print('\n* ❌ Digite uma opção válida')
+                    
+            nota_sus = calcular_sus(usuario)
             Tabela_relatorio(usuario)
         except:
             return
