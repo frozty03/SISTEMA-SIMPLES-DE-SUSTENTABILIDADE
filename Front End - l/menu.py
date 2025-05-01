@@ -1,9 +1,19 @@
 from datetime import date #para pegar a data atual
 import os
 from tabulate import tabulate
+import mysql.connector
 
 def limpar_tela():
     os.system('cls' if os.name == 'nt' else 'clear')
+
+conexao = mysql.connector.connect(
+    host="localhost", #Usando a rede local
+    user="root",
+    password="1234", #Trocar ??? quando for testar
+    database="pi1"
+)
+
+cursor = conexao.cursor()
 
 limpar_tela()
 
@@ -19,9 +29,12 @@ print('=========================================================================
 print('| PARA CÁLCULO MAIS PRECISO, CONFIRA A ABA PARÂMETROS PARA REALIZAR AS MEDIÇÕES DE CONSUMO.        |')
 print('====================================================================================================')
 
+#apagar quando a integração estiver completa
 usuarios = {}  # simular bd
 registros = {}  # guarda valores em matrizes 2D. registros[chave][matriz][valor da matriz]
-nota_sus = {}
+
+nota_sus = 0 # média geral do usuário
+
 # ADICIONAR EMAIL P/ RECUPERAÇÃO DE SENHA
 def cadastro():
     limpar_tela()
@@ -29,9 +42,13 @@ def cadastro():
     print('====================================================================================================')
     usuario = input('* Digite um nome de usuário: ')
 
-    if usuario in usuarios:
-        print('* ❌ Erro: Usuário já existe!')
-        return
+    #verifica os usuarios
+    cursor.execute("select u_usuario from usuario") 
+    for i in cursor: #percorre o select
+        if usuario ==(i[0]):
+            cursor.fetchall() #limpando cursor
+            print('* ❌ Erro: Usuário já existe!')
+            return
 
     senha = input('* Digite uma senha: ')
     senha2 = input('* Confirme a senha: ')
@@ -39,9 +56,9 @@ def cadastro():
     if senha != senha2:
         print('* ❌ Erro: As senhas não coincidem!')
     else:
-        usuarios[usuario] = senha  # salvar a senha ao usuario
-        registros[usuario] = []  # cria uma chave
-        nota_sus[usuario] = 0  # cria uma chave
+        #adicionando no banco de dados
+        cursor.execute("insert into usuario (u_usuario,u_senha,u_nota) values (%s,%s,0)", (usuario,senha)) 
+        conexao.commit()
         print('* ✅ Cadastro realizado com sucesso!')
     print('====================================================================================================')
 
@@ -53,13 +70,17 @@ def login():
     usuario = input('* Usuário: ')
     senha = input('* Senha: ')
 
-    if usuario in usuarios and usuarios[usuario] == senha:  # se o usuario estiver no dict e a senha corresponder
-        print(f' ✅ Login bem-sucedido! Bem-vindo, {usuario}!')
-        print('====================================================================================================')
-        menu_login(usuario)  # iniciar o menu pós login
-    else:
-        print('* ❌ Erro: Usuário ou senha incorretos!')
-        print('====================================================================================================')
+    #verifica os usuarios
+    cursor.execute("select u_usuario,u_senha,u_nota from usuario") 
+    for i in cursor: #percorre o select
+        if usuario == i[0] and senha == i[1]: # verifica senha e usuário
+            print(f' ✅ Login bem-sucedido! Bem-vindo, {usuario}!')
+            print('====================================================================================================')
+            cursor.fetchall() #limpando cursor
+            menu_login(usuario)  # iniciar o menu pós login
+        else:
+            print('* ❌ Erro: Usuário ou senha incorretos!')
+            print('====================================================================================================')
 
 def area_login():
     while True:
@@ -155,10 +176,10 @@ def parametros(usuario):
 def menu_login(usuario):
     while True:
         limpar_tela()
-        calcular_sus(usuario)
+        nota_sus = calcular_sus(usuario)
         print('\n                                                MENU                                                ')
         print('====================================================================================================')
-        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus[usuario],2):<23} |')
+        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus,2) if nota_sus is not None else 0:<23} |')
         print('|--------------------------------------------------------------------------------------------------|')
         print('|    1. Cadastro de informações | 2. Lista de gráficos | 3. Ações (recomendações) | 4. Relatório   |')
         print('|                                  5. Parâmetros   |    6. Sair                                    |')
@@ -183,30 +204,42 @@ def menu_login(usuario):
 def cadastro_tela(usuario): #Tela do cadastro
     while True:
         limpar_tela()
-        calcular_sus(usuario)
+        nota_sus = calcular_sus(usuario)
         print('\n                                       CADASTRO DE INFORMAÇÕES                                      ')
         print('====================================================================================================')
-        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus[usuario],2):<24}|')
+        print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus,2) if nota_sus is not None else 0:<24}|')
         print('|--------------------------------------------------------------------------------------------------|\n')
 
-        data=(date.today()).strftime("%Y-%m-%d") #pegando data atual ejá convertendo para string
-        print(f'Data do registro: {data}\n')
+        data=date.today() #pegando data atual ejá convertendo para string
+        print(f'Data do registro: {data.strftime("%Y-%m-%d")}\n')
 
-        calculo = cadastro_calculo(usuario, data) #chamando a funcao
-        registros[usuario].append(calculo[:]) #faço o registro
+        #procurando id do usuário
+        cursor.execute("select u_id from usuario where u_usuario = %s", (usuario,))
+        for i in cursor:
+            id_usuario=i[0]
+        registro = cadastro_calculo(usuario, data) #chamando a funcao
+        
+        #fazendo o registro
+        cursor.execute("insert into registro (r_usuarioId,r_data,r_energia,r_agua,r_residuo,r_transporte,r_media)" \
+        "values (%s,%s,%s,%s,%s,%s,%s)", (id_usuario,registro[0],registro[1],registro[2],registro[3],registro[4],registro[5])) #faço o registro
+        conexao.commit()
 
-        print(f'\nNota eneriga:  {calculo[1]}') #apresento a nota
-        print(f'Nota água:       {calculo[2]}')
-        print(f'Nota resíduo:    {calculo[3]}')
-        print(f'Nota transporte: {calculo[4]}')
-        print(f'Nota geral:      {calculo[5]}') 
+        nota_sus = calcular_sus(usuario) #calculo da nota geral
+        calculo = calcular_nota(registro[1],registro[2],registro[3],registro[4]) #calculo da nota do registro
+        print(f'\nNota energia:  {calculo[0]}') #apresento a nota
+        print(f'Nota água:       {calculo[1]}')
+        print(f'Nota resíduo:    {calculo[2]}')
+        print(f'Nota transporte: {calculo[3]}')
+        print(f'Nota média:      {calculo[4]}') 
+
+        input("\nPressione qualquer tecla para voltar para o menu: ")
         menu_login(usuario) #voltando para o menu
         return
 
 def cadastro_calculo(usuario, data): #Entrada de dados e cálculo das notas
     try:
         energia=float(input("Informe seu consumo de energia (kW/dia): "))
-        agua=float(input("Informe seu consumo de energia (L/dia): "))
+        agua=float(input("Informe seu consumo de água (L/dia): "))
         residuo=float(input("Informe sua geração de resíduos recicláveis (%): "))
             
         #cabeçalho explicando o último input
@@ -221,22 +254,26 @@ def cadastro_calculo(usuario, data): #Entrada de dados e cálculo das notas
         menu_login(usuario) #voltando para o menu
         return
 
-    calculo = [] #inicializando vetor
+    registro = [] #inicializando vetor
+    media = []
 
-    #formato: [data, nota_energia, nota_água, nota_resíduo, nota_transporte, nota_sustentabilidade]
-    calculo[:] = (data,*calcular_nota(energia,agua,residuo,transporte)) #atribui data e os retornos da função no vetor calculo
-    if(nota_sus[usuario]==0): #Caso for a primeira vez calculando a nota
-        nota_sus[usuario] = calculo[5]
-    else: #Pega a média de todas as notas
-        calcular_sus(usuario)
-    return calculo
+    media[:] = calcular_nota(energia,agua,residuo,transporte)
+    #formato: [data, energia, água, resíduo, transporte, sustentabilidade]
+    registro[:] = (data.strftime("%Y-%m-%d"),energia,agua,residuo,transporte,media[4]) #atribui data e os retornos da função no vetor calculo
+    return registro
 
 def calcular_sus(usuario):
-    if(nota_sus[usuario]!=0):
-        soma=0
-        for i in range(len(registros[usuario])):
-            soma += registros[usuario][i][5]  # Acessa o índice 2 de cada sublista (último valor)
-        nota_sus[usuario] = soma/len(registros[usuario][:])
+    nota_sus=0
+    #pegando média
+    cursor.execute("select avg(registro.r_media) from usuario, registro " \
+    "where usuario.u_id = registro.r_usuarioId and usuario.u_usuario= %s", (usuario,))
+    for i in cursor:
+        nota_sus=i[0]
+
+    #atualizando a tabela
+    cursor.execute("update usuario set u_nota = %s where u_usuario = %s", (nota_sus,usuario))
+    conexao.commit()
+    return nota_sus
 
 #Cálculo da nota dos parâmetros
 def calcular_nota(energia, agua, residuo, transporte):
@@ -300,14 +337,31 @@ def grafico(usuario):
     print('|                     GRÁFICO CONSTRUIDO COM BASE NOS ÚLTIMOS 5 REGISTROS                          |')
     print('====================================================================================================')
 
-    if usuario not in registros or not registros[usuario]:
-        print("* ❌ Nenhum registro encontrado!")
+    #identifica o id do usuário
+    cursor.execute("select u_id from usuario where u_usuario = %s", (usuario,))
+    for i in cursor:
+        id_usuario=i[0]
+
+    #verifica se há registros
+    cursor.execute("select r_id from registro where r_usuarioId = %s", (id_usuario,))
+    select = cursor.fetchone()
+    if select is None: #caso não houver
+        print("* ❌ Nenhum dado de sustentabilidade encontrado.")
         input("\nPressione ENTER para voltar...")
         return
+    cursor.fetchall()
 
-    registros_usuario = registros[usuario][-5:]  # pegar os ultimos 5 registros
-    datas = [r[0].strftime('%d/%m') for r in registros_usuario]
-    notas = [r[5] for r in registros_usuario]
+    # pegar os ultimos 5 registros
+    cursor.execute("select r_data, r_media from registro " \
+    "where r_usuarioId = %s " \
+    "order by r_data desc " \
+    "limit 5", (id_usuario,))
+
+    datas = []
+    notas = []
+    for i in cursor:
+        datas.append(i[0].strftime('%d/%m'))
+        notas.append(i[1])
 
     # desenho do gráfico
     print(f"\nEvolução da nota de sustentabilidade - {usuario}")
@@ -332,16 +386,34 @@ def mostrar_tela_recomendacoes(usuario):
     print(f"   ANÁLISE E RECOMENDAÇÕES - {usuario.upper()}")
     print("=" * 80)
 
-    if usuario not in registros or not registros[usuario]:
+    #identifica o id do usuário
+    cursor.execute("select u_id from usuario where u_usuario = %s", (usuario,))
+    for i in cursor:
+        id_usuario=i[0]
+
+    #verifica se há registros
+    cursor.execute("select r_id from registro where r_usuarioId = %s", (id_usuario,))
+    select = cursor.fetchone()
+    if select is None: #caso não houver
         print("* ❌ Nenhum dado de sustentabilidade encontrado.")
         input("\nPressione ENTER para voltar...")
         return
+    cursor.fetchall()
 
-    dados_atuais = registros[usuario][-1] #Ultimo Registro
-    nota_energia = dados_atuais[1]
-    nota_agua = dados_atuais[2]
-    nota_residuo = dados_atuais[3]
-    nota_transporte = dados_atuais[4]
+    # pegar o ultimo registro
+    cursor.execute("select r_energia,r_agua,r_residuo,r_transporte from registro " \
+    "where r_usuarioId = %s " \
+    "order by r_data desc " \
+    "limit 1", (id_usuario,))
+
+    for i in cursor:
+        dados = i
+
+    notas=calcular_nota(*dados)
+    nota_energia = int(notas[0])
+    nota_agua = int(notas[1])
+    nota_transporte = int(notas[2])
+    nota_residuo = int(notas[3])
 
     classificacoes = { #Classificacoes de consumo
         "energia": {
@@ -373,6 +445,7 @@ def mostrar_tela_recomendacoes(usuario):
             5: "Nenhum impacto"
         }
     }
+
 
     dados = { #Nota e possiveis recomendacoes
         "Consumo de energia": {
@@ -409,62 +482,99 @@ def mostrar_tela_recomendacoes(usuario):
     input()
 
 def relatorio_calculo(nota): # retorna a classificacao de cada nota
-    if(nota==1):
-        return "elevado"
-    elif(nota==2):
-        return "elevado"
-    elif(nota==3):
-        return "significativo"
-    elif(nota==4):
-        return "moderado"
-    elif(nota==5):
+    if(nota==5):
         return "ideal, parabéns!"
+    elif(nota>=4):
+        return "moderado"
+    elif(nota>=3):
+        return "significativo"
+    elif(nota>=2):
+        return "elevado"
+    elif(nota>=1):
+        return "muito elevado"
 
 # Função para criar a tela da tabela
 def Tabela_relatorio(usuario):
     limpar_tela()
-    calcular_sus(usuario)
+    nota_sus = calcular_sus(usuario)
     print('=================================================================================================================================')
     print('                                                      RELATÓRIO E HISTÓRICO                                                      ')
     print('=================================================================================================================================')
-    print(f"Nota geral: {round(nota_sus[usuario],2)}\n")
-    print(f"{'Registro n°':<15}{'Data':<15}{'Energia':<10}{'Água':<10}{'Resíduo':<10}{'Transporte':<15}{'Média':<10}{'Relatório':<20}")
+    print(f"\n{'Registro n°':<15}{'Data':<15}{'Energia':<10}{'Água':<10}{'Resíduo':<10}{'Transporte':<15}{'Média':<10}{'Relatório':<20}")
     print("---------------------------------------------------------------------------------------------------------------------------------")
+
+    #identifica o id do usuário
+    cursor.execute("select u_id from usuario where u_usuario = %s", (usuario,))
+    for i in cursor:
+        id_usuario=i[0]
     
-    if usuario not in registros or not registros[usuario]: #Verifica se há registros
+    #verifica se há registros
+    cursor.execute("select r_id from registro where r_usuarioId = %s", (id_usuario,))
+    select = cursor.fetchone()
+    if select is None: #caso não houver
         print("* ❌ Nenhum dado de sustentabilidade encontrado.")
         input("\nPressione ENTER para voltar...")
         return
-    
-    #:<10 "< indica alinhamento à esquerda, 10 indica o números de espaçoes que irá ocupar"
-    i = 0
-    vazio=''
-    while (i<len(registros[usuario])):
-       data_r= registros[usuario][i][0]
-       print(f"{i+1:<15}{data_r:<15}{registros[usuario][i][1]:<10}{registros[usuario][i][2]:<10}{registros[usuario][i][3]:<10}{registros[usuario][i][4]:<15}{registros[usuario][i][5]:<10}", end='')
-       print(f'Consumo de energia {relatorio_calculo(registros[usuario][i][1])}')
-       print(f"{vazio:<85}Consumo de água {relatorio_calculo(registros[usuario][i][2])}")
-       print(f"{vazio:<85}Grau de geração de lixo {relatorio_calculo(registros[usuario][i][3])}")
-       print(f"{vazio:<85}Índice do uso de transporte {relatorio_calculo(registros[usuario][i][4])}")
-       print("----------------------------------------------------------------------------------------------------------------------------------")
-       i=i+1
+    cursor.fetchall()
 
-    print("\nPara editar um registro, digite seu número")
-    print("ou pressione ENTER para voltar ao menu")
+    #consultando os registros
+    cursor.execute("select r_data,r_energia,r_agua,r_residuo,r_transporte,r_media,r_id " \
+    "from registro where r_usuarioId = %s", (id_usuario,))
+
+    j=0
+    registro_id = []
+    vazio=''
+    #:<10 "< indica alinhamento à esquerda, 10 indica o números de espaçoes que irá ocupar"
+    for i in cursor:
+        notas=calcular_nota(i[1],i[2],i[3],i[4])
+        print(f"{j+1:<15}{i[0].strftime('%Y-%m-%d'):<15}{i[1]:<10}{i[2]:<10}{i[3]:<10}{i[4]:<15}{i[5]:<10}", end='')
+        print(f'Parâmetro energia:    {notas[0]}, {relatorio_calculo(notas[0])}')
+        print(f"{vazio:<85}Parâmetro água:       {notas[1]}, {relatorio_calculo(notas[1])}")
+        print(f"{vazio:<85}Parâmetro resíduos:   {notas[2]}, {relatorio_calculo(notas[2])}")
+        print(f"{vazio:<85}Parâmetro transporte: {notas[3]}, {relatorio_calculo(notas[3])}")
+        print("----------------------------------------------------------------------------------------------------------------------------------")
+        registro_id.append(i[6]) #armazena os id dos registros verificados
+        j+=1
+    print(f"Nota geral: {round(nota_sus,2)}, {relatorio_calculo(nota_sus)}")
+    print("-"*130)
+
+    print("\nPara editar ou deletar um registro, digite seu número correspondente")
+    print("ou pressione ENTER para voltar ao menu\n")
     opcao = input("Informe sua ação: ")
     if opcao == '':
         return
     else: #edição de registro
         try: 
             opcao = int(opcao) #verifica se o input é numérico
-            if(opcao>len(registros[usuario][:])): #verifica se o registro existe
-                raise #vai para o except
+            #verifica se o registro existe
+            if(opcao<1 or opcao>len(registro_id)):
+                print("* ❌ O valor informado não corresponde a nenhum registro.")
+                input("\nPressione ENTER para voltar...")
+                return
             
-            #-1 pq os registros são enumerados a partir do 0, mas o usuário percebe a partir do 1
-            data = registros[usuario][opcao-1][0]#pega a data do registro
-            registros[usuario][opcao-1][0]=data #altera o primeiro item
-            print()#pulando uma linha
-            registros[usuario][opcao-1][:-5]=cadastro_calculo(usuario, data) #altera os 5 últimos itens
+            while(True):
+                escolha = input("Pressione E para editar ou D para deletar um registro: ")
+                if(escolha.upper() == 'E'):
+                    #refaz o calculo
+                    print()
+                    calculo = cadastro_calculo(usuario, date.today())
+                    #altera no bd
+                    cursor.execute("update registro set r_energia = %s," \
+                    "r_agua = %s," \
+                    "r_residuo = %s," \
+                    "r_transporte = %s," \
+                    "r_media = %s" \
+                    "where r_id = %s", (calculo[1],calculo[2],calculo[3],calculo[4],calculo[5],registro_id[opcao-1]))
+                    conexao.commit()
+                    break
+                elif(escolha.upper() == 'D'):
+                    cursor.execute("delete from registro where r_id = %s", (registro_id[opcao-1],))
+                    conexao.commit()
+                    break
+                else:
+                    print('\n* ❌ Digite uma opção válida')
+                    
+            nota_sus = calcular_sus(usuario)
             Tabela_relatorio(usuario)
         except:
             return
