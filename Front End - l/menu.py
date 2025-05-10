@@ -35,17 +35,21 @@ def cadastro():
 
     senha = input('* Digite uma senha: ')
     senha2 = input('* Confirme a senha: ')
-
+    
+    #analisando se as senhas sao iguais
     if senha != senha2:
         print('* ❌ Erro: As senhas não coincidem!')
     else:
-        usuarios[usuario] = senha  # salvar a senha ao usuario
-        registros[usuario] = []  # cria uma chave
-        nota_sus[usuario] = 0  # cria uma chave
+        # salvar a senha ao usuario
+        usuarios[usuario] = senha
+        # cria uma chave
+        registros[usuario] = [] 
+         # cria uma chave
+        nota_sus[usuario] = 0 
         print('* ✅ Cadastro realizado com sucesso!')
     print('====================================================================================================')
 
-# ADICIONAR OPÇÃO P RECUPERAR SENHA
+# ADICIONAR OPÇÃO PARA RECUPERAR SENHA
 def login():
     limpar_tela()
     print('\n                                           LOGIN')
@@ -53,10 +57,12 @@ def login():
     usuario = input('* Usuário: ')
     senha = input('* Senha: ')
 
-    if usuario in usuarios and usuarios[usuario] == senha:  # se o usuario estiver no dict e a senha corresponder
+     # SE O USUARIO ESTIVER NO DICT E A SENHA CORRESPONDER 
+    if usuario in usuarios and usuarios[usuario] == senha:  
         print(f' ✅ Login bem-sucedido! Bem-vindo, {usuario}!')
         print('====================================================================================================')
-        menu_login(usuario)  # iniciar o menu pós login
+         # iniciar o menu pós login
+        menu_login(usuario) 
     else:
         print('* ❌ Erro: Usuário ou senha incorretos!')
         print('====================================================================================================')
@@ -188,22 +194,24 @@ def cadastro_tela(usuario): #Tela do cadastro
         print('====================================================================================================')
         print(f'| * Usuário: {usuario:<55} Nota: {round(nota_sus[usuario],2):<24}|')
         print('|--------------------------------------------------------------------------------------------------|\n')
-
-        data=(date.today()).strftime("%Y-%m-%d") #pegando data atual ejá convertendo para string
+        
+        #pegando data atual ejá convertendo para string
+        data=(date.today()).strftime("%Y-%m-%d") 
         print(f'Data do registro: {data}\n')
 
         calculo = cadastro_calculo(usuario, data) #chamando a funcao
         registros[usuario].append(calculo[:]) #faço o registro
-
-        print(f'\nNota eneriga:  {calculo[1]}') #apresento a nota
+        
+        #apresento a nota
+        print(f'\nNota eneriga:  {calculo[1]}') 
         print(f'Nota água:       {calculo[2]}')
         print(f'Nota resíduo:    {calculo[3]}')
         print(f'Nota transporte: {calculo[4]}')
         print(f'Nota geral:      {calculo[5]}') 
         menu_login(usuario) #voltando para o menu
         return
-
-def cadastro_calculo(usuario, data): #Entrada de dados e cálculo das notas
+        #Entrada de dados e cálculo das notas
+def cadastro_calculo(usuario, data): 
     try:
         energia=float(input("Informe seu consumo de energia (kW/dia): "))
         agua=float(input("Informe seu consumo de energia (L/dia): "))
@@ -288,7 +296,7 @@ def calcular_nota(energia, agua, residuo, transporte):
     elif (transporte == 'BC'):
         n_transporte = 5
 
-    # Média geral
+    # MÉDIA GERAL
     n_sustentabilidade = (n_energia + n_agua + n_residuo + n_transporte) / 4
     return n_energia, n_agua, n_residuo, n_transporte, n_sustentabilidade
 
@@ -300,20 +308,23 @@ def grafico(usuario):
     print('|                     GRÁFICO CONSTRUIDO COM BASE NOS ÚLTIMOS 5 REGISTROS                          |')
     print('====================================================================================================')
 
+    #VERIFICANDO SE TEM REGISTROS
     if usuario not in registros or not registros[usuario]:
         print("* ❌ Nenhum registro encontrado!")
         input("\nPressione ENTER para voltar...")
         return
-
-    registros_usuario = registros[usuario][-5:]  # pegar os ultimos 5 registros
+        
+    #PEGAR OS ULTIMOS 5 NUMEROS
+    registros_usuario = registros[usuario][-5:]  
     datas = [r[0].strftime('%d/%m') for r in registros_usuario]
     notas = [r[5] for r in registros_usuario]
 
-    # desenho do gráfico
+    # DESENHO DO GRAFICO
     print(f"\nEvolução da nota de sustentabilidade - {usuario}")
     print(f"Datas: {' | '.join(datas)}\n") #pegar as datas dos registros
 
-    for y in range(5, 0, -1):  # notas de 5 a 1
+    #NOTAS DE 1 A 5
+    for y in range(5, 0, -1):  
         linha = f"{y} | "
         for nota in notas:
             linha += "■ " if nota >= y else "  "
@@ -322,28 +333,32 @@ def grafico(usuario):
     print("  +" + "―" * (len(notas) * 2))
     print("    " + " ".join(str(i + 1) for i in range(len(notas))))
 
+    #VOLTAR PARA PAGINA ANTERIOR
     opcao = input("\nAperte ENTER para retornar ao menu: ")
     if opcao == '':
         return
-
+    
 def mostrar_tela_recomendacoes(usuario):
     limpar_tela()
     print("\n" + "=" * 80)
     print(f"   ANÁLISE E RECOMENDAÇÕES - {usuario.upper()}")
     print("=" * 80)
 
+    #VERIFICA SE TEM REGISTROS
     if usuario not in registros or not registros[usuario]:
         print("* ❌ Nenhum dado de sustentabilidade encontrado.")
         input("\nPressione ENTER para voltar...")
         return
-
-    dados_atuais = registros[usuario][-1] #Ultimo Registro
+        
+    #ULTIMO REGISTRO
+    dados_atuais = registros[usuario][-1] 
     nota_energia = dados_atuais[1]
     nota_agua = dados_atuais[2]
     nota_residuo = dados_atuais[3]
     nota_transporte = dados_atuais[4]
 
-    classificacoes = { #Classificacoes de consumo
+    #CLASSIFICAÇÃO DE CONSUMO
+    classificacoes = { 
         "energia": {
             1: "Alto consumo",
             2: "Consumo elevado",
@@ -373,8 +388,8 @@ def mostrar_tela_recomendacoes(usuario):
             5: "Nenhum impacto"
         }
     }
-
-    dados = { #Nota e possiveis recomendacoes
+    #NOTAS DE POSSIVEIS RECOMENDAÇÕES
+    dados = { 
         "Consumo de energia": {
             "nota": nota_energia,
             "classificacao": classificacoes["energia"][nota_energia],
@@ -396,19 +411,21 @@ def mostrar_tela_recomendacoes(usuario):
             "recomendacao": "Usar bicicleta, transporte público ou incentivar caronas e veículos elétricos."
         }
     }
-
+    #ANALISA POSSIVEIS RECOMENDAÇÕES
     for acao, info in dados.items():
         print(f"\n🔹 {acao}")
         print(f"   Nota: {info['nota']} - {info['classificacao']}")
         if info["nota"] < 5:
             print(f"   Recomendações: {info['recomendacao']}")
         else:
-            print("   ✅ Excelente! Continue assim!") #caso nao haja recomendacoes
-
+            #CASO NAO HAJA RECOMENDAÇÕES
+            print("   ✅ Excelente! Continue assim!")
+    #VOLTANDO PARA PAGINA ANTERIOR
     print("\nPressione ENTER para voltar ao menu.") 
     input()
-
-def relatorio_calculo(nota): # retorna a classificacao de cada nota
+    
+   #RETORNA A CLASSIFICAÇÃO DE CADA NOTA
+def relatorio_calculo(nota): 
     if(nota==1):
         return "elevado"
     elif(nota==2):
@@ -420,7 +437,7 @@ def relatorio_calculo(nota): # retorna a classificacao de cada nota
     elif(nota==5):
         return "ideal, parabéns!"
 
-# Função para criar a tela da tabela
+#FUNÇÃO PARA CRIAR A TELA DA TABELA
 def Tabela_relatorio(usuario):
     limpar_tela()
     calcular_sus(usuario)
@@ -430,15 +447,16 @@ def Tabela_relatorio(usuario):
     print(f"Nota geral: {round(nota_sus[usuario],2)}\n")
     print(f"{'Registro n°':<15}{'Data':<15}{'Energia':<10}{'Água':<10}{'Resíduo':<10}{'Transporte':<15}{'Média':<10}{'Relatório':<20}")
     print("---------------------------------------------------------------------------------------------------------------------------------")
-    
-    if usuario not in registros or not registros[usuario]: #Verifica se há registros
+
+    #VERIFICA SE TEM REGISTROS
+    if usuario not in registros or not registros[usuario]: 
         print("* ❌ Nenhum dado de sustentabilidade encontrado.")
         input("\nPressione ENTER para voltar...")
         return
-    
     #:<10 "< indica alinhamento à esquerda, 10 indica o números de espaçoes que irá ocupar"
     i = 0
     vazio=''
+    #MOSTRA O RELATORIO COM TODAS AS NOTAS DE CONSUMO DO USUARIO
     while (i<len(registros[usuario])):
        data_r= registros[usuario][i][0]
        print(f"{i+1:<15}{data_r:<15}{registros[usuario][i][1]:<10}{registros[usuario][i][2]:<10}{registros[usuario][i][3]:<10}{registros[usuario][i][4]:<15}{registros[usuario][i][5]:<10}", end='')
@@ -448,23 +466,30 @@ def Tabela_relatorio(usuario):
        print(f"{vazio:<85}Índice do uso de transporte {relatorio_calculo(registros[usuario][i][4])}")
        print("----------------------------------------------------------------------------------------------------------------------------------")
        i=i+1
-
+        
+    #OPÇÃO PARA ALTERAR UM REGISTRO
     print("\nPara editar um registro, digite seu número")
+    #VOLTAR PARA PAGINA ANTERIROR
     print("ou pressione ENTER para voltar ao menu")
     opcao = input("Informe sua ação: ")
     if opcao == '':
         return
-    else: #edição de registro
+        #EDIÇÃO DE REGISTROS
+    else: 
         try: 
-            opcao = int(opcao) #verifica se o input é numérico
-            if(opcao>len(registros[usuario][:])): #verifica se o registro existe
-                raise #vai para o except
+            #VERIFICA SE O INPUT É NUMERICO
+            opcao = int(opcao) 
+            #VERIFICA SE O REGISTRO EXISTE
+            if(opcao>len(registros[usuario][:])):
+               #IRÁ PARA O EXCEPT
+                raise 
             
             #-1 pq os registros são enumerados a partir do 0, mas o usuário percebe a partir do 1
             data = registros[usuario][opcao-1][0]#pega a data do registro
             registros[usuario][opcao-1][0]=data #altera o primeiro item
             print()#pulando uma linha
-            registros[usuario][opcao-1][:-5]=cadastro_calculo(usuario, data) #altera os 5 últimos itens
+            #ALTERA OS ULTIMOS 5 NUMEROS
+            registros[usuario][opcao-1][:-5]=cadastro_calculo(usuario, data) 
             Tabela_relatorio(usuario)
         except:
             return
