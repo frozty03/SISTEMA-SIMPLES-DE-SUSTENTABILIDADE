@@ -3,9 +3,7 @@ import os
 from tabulate import tabulate
 import mysql.connector
 import numpy as np
-
-def limpar_tela():
-    os.system('cls' if os.name == 'nt' else 'clear')
+from math import gcd
 
 # dicionário para criptografia
 mapeamento = {
@@ -15,14 +13,19 @@ mapeamento = {
     'A': 10, 'B': 11, 'C': 12, 'D': 13, 'E': 14, 'F': 15, 'G': 16, 'H': 17, 'I': 18, 'J': 19,
     'K': 20, 'L': 21, 'M': 22, 'N': 23, 'O': 24, 'P': 25, 'Q': 26, 'R': 27, 'S': 28, 'T': 29,
     'U': 30, 'V': 31, 'W': 32, 'X': 33, 'Y': 34, 'Z': 35,
+    # letras minúsculas
+    'a': 36, 'b': 37, 'c': 38, 'd': 39, 'e': 40, 'f': 41, 'g': 42, 'h': 43, 'i': 44, 'j': 45,
+    'k': 46, 'l': 47, 'm': 48, 'n': 49, 'o': 50, 'p': 51, 'q': 52, 'r': 53, 's': 54, 't': 55,
+    'u': 56, 'v': 57, 'w': 58, 'x': 59, 'y': 60, 'z': 61,
     # símbolos especiais
-    '-': 36, '.': 37, ' ': 38, '$': 39, '/': 40, '+': 41, '%': 42
+    '-': 62, '.': 63, ' ': 64, '$': 65, '/': 66, '+': 67, '%': 68
 }
+
 # para decodificação
 inverso = {v: k for k, v in mapeamento.items()}
 
-# matriz de criptografia
-A = np.array([[5, 4], [3, 3]])
+# matriz de criptografia (precisa ser invertível módulo 69)
+A = np.array([[2, 3], [1, 4]])
 
 # função para calcular a matriz inversa modular
 def matriz_inversa_modular(matriz, modulo):
@@ -31,39 +34,38 @@ def matriz_inversa_modular(matriz, modulo):
     matriz_adjunta = np.array([[matriz[1, 1], -matriz[0, 1]], [-matriz[1, 0], matriz[0, 0]]])
     return (det_inverso * matriz_adjunta) % modulo
 
-
 def criptografar(texto):
     # se comprimento ímpar, repete último caractere
     if len(texto) % 2 != 0:
         texto += texto[-1]
 
+    # filtra caracteres que não estão no dicionario
+    caracteres_validos = [c for c in texto if c in mapeamento]
+    if len(caracteres_validos) != len(texto):
+        print("Aviso: Alguns caracteres foram ignorados por não estarem no dicionário")
+
     # converter para números
-    I = [mapeamento[c] for c in texto.upper() if c in mapeamento]
+    I = [mapeamento[c] for c in caracteres_validos]
 
     # criar matriz de pares
     P = []
     for i in range(len(I) // 2):
-        k = 2 * i
-        P.append([I[k], I[k + 1]])
+        P.append([I[2 * i], I[2 * i + 1]])
     P = np.array(P).T
 
     # codificar
-    C = np.dot(A, P) % 43
+    C = np.dot(A, P) % 69
 
     # converter para texto
-    C = C.T
-    TC = []
-    for i in range(len(I) // 2):
-        TC.extend(C[i, :])
-    codificado = [inverso[int(i)] for i in TC]
-
-    return ''.join(codificado)
-
+    codificado = []
+    for col in C.T:
+        codificado.extend(col)
+    return ''.join([inverso[int(c)] for c in codificado])
 
 def descriptografar(codificado):
-    # verifica comprimento par
+    # verificação se é par
     if len(codificado) % 2 != 0:
-        raise ValueError("Senha codificada deve ter comprimento par!")
+        raise ValueError("Texto codificado deve ter comprimento par")
 
     # converter para números
     I = [mapeamento[c] for c in codificado]
@@ -71,26 +73,26 @@ def descriptografar(codificado):
     # criar matriz de pares
     C = []
     for i in range(len(I) // 2):
-        k = 2 * i
-        C.append([I[k], I[k + 1]])
+        C.append([I[2 * i], I[2 * i + 1]])
     C = np.array(C).T
 
-    # decodificar
-    AI = matriz_inversa_modular(A, 43)
-    P = np.dot(AI, C) % 43
+    # calcular matriz inversa módulo 69 (AGORA CONSISTENTE)
+    AI = matriz_inversa_modular(A, 69)
+    P = np.dot(AI, C) % 69  # Usando módulo 69 aqui também
 
     # converter para texto
-    P = P.T
-    TC = []
-    for i in range(len(I) // 2):
-        TC.extend(P[i, :])
-    decodificado = [inverso[int(i)] for i in TC]
+    decodificado = []
+    for col in P.T:
+        decodificado.extend(col)
 
-    # verifica se o último caractere foi repetido
-    if len(decodificado) > 1 and decodificado[-1] == decodificado[-2]:
-        decodificado = decodificado[:-1]
+    # remover adicional se for necessário
+    texto = ''.join([inverso[int(c)] for c in decodificado])
+    if len(texto) > 1 and texto[-1] == texto[-2]:
+        texto = texto[:-1]
+    return texto
 
-    return ''.join(decodificado)
+def limpar_tela():
+    os.system('cls' if os.name == 'nt' else 'clear')
 
 conexao = mysql.connector.connect(
     host="localhost", #Usando a rede local
@@ -131,7 +133,7 @@ def cadastro():
     #verifica os usuarios
     cursor.execute("select u_usuario from usuario") 
     for i in cursor: #percorre o select
-        if usuario ==(i[0]):
+        if usuario == descriptografar(i[0]):
             cursor.fetchall() #limpando cursor
             print('* ❌ Erro: Usuário já existe!')
             return
@@ -318,7 +320,7 @@ def cadastro_tela(usuario): #Tela do cadastro
         print(f'Data do registro: {data.strftime("%Y-%m-%d")}\n')
 
         #procurando id do usuário
-        cursor.execute("select u_id from usuario where u_usuario = %s", (usuario,))
+        cursor.execute("select u_id from usuario where u_usuario = %s", (criptografar(usuario),))
         for i in cursor:
             id_usuario=i[0]
         registro = cadastro_calculo(usuario, data) #chamando a funcao
@@ -345,7 +347,8 @@ def cadastro_calculo(usuario, data): #Entrada de dados e cálculo das notas
         energia=float(input("Informe seu consumo de energia (kW/dia): "))
         agua=float(input("Informe seu consumo de água (L/dia): "))
         residuo=float(input("Informe sua geração de resíduos recicláveis (%): "))
-            
+        if(energia<0 or agua<0 or residuo<0):
+            raise
         #cabeçalho explicando o último input
         print("\nPV - Privado\nPVU - Público e privado\nPU - Público\nE - Elétrico\nBC - Bicleta e/ou caminhada") 
         transporte=input("Informe o tipo de transporte utilizado (PV/PVU/PU/E/BC): ").upper() #upper() transforma em maiúsculo
@@ -370,12 +373,12 @@ def calcular_sus(usuario):
     nota_sus=0
     #pegando média
     cursor.execute("select avg(registro.r_media) from usuario, registro " \
-    "where usuario.u_id = registro.r_usuarioId and usuario.u_usuario= %s", (usuario,))
+    "where usuario.u_id = registro.r_usuarioId and usuario.u_usuario= %s", (criptografar(usuario),))
     for i in cursor:
         nota_sus=i[0]
 
     #atualizando a tabela
-    cursor.execute("update usuario set u_nota = %s where u_usuario = %s", (nota_sus,usuario))
+    cursor.execute("update usuario set u_nota = %s where u_usuario = %s", (nota_sus,criptografar(usuario)))
     conexao.commit()
     return nota_sus
 
@@ -442,7 +445,7 @@ def grafico(usuario):
     print('====================================================================================================')
 
     #identifica o id do usuário
-    cursor.execute("select u_id from usuario where u_usuario = %s", (usuario,))
+    cursor.execute("select u_id from usuario where u_usuario = %s", (criptografar(usuario),))
     for i in cursor:
         id_usuario=i[0]
 
@@ -491,7 +494,7 @@ def mostrar_tela_recomendacoes(usuario):
     print("=" * 80)
 
     #identifica o id do usuário
-    cursor.execute("select u_id from usuario where u_usuario = %s", (usuario,))
+    cursor.execute("select u_id from usuario where u_usuario = %s", (criptografar(usuario),))
     for i in cursor:
         id_usuario=i[0]
 
@@ -516,8 +519,8 @@ def mostrar_tela_recomendacoes(usuario):
     notas=calcular_nota(*dados)
     nota_energia = int(notas[0])
     nota_agua = int(notas[1])
-    nota_transporte = int(notas[2])
-    nota_residuo = int(notas[3])
+    nota_residuo = int(notas[2])
+    nota_transporte = int(notas[3])
 
     classificacoes = { #Classificacoes de consumo
         "energia": {
@@ -549,7 +552,6 @@ def mostrar_tela_recomendacoes(usuario):
             5: "Nenhum impacto"
         }
     }
-
 
     dados = { #Nota e possiveis recomendacoes
         "Consumo de energia": {
@@ -608,7 +610,7 @@ def Tabela_relatorio(usuario):
     print("---------------------------------------------------------------------------------------------------------------------------------")
 
     #identifica o id do usuário
-    cursor.execute("select u_id from usuario where u_usuario = %s", (usuario,))
+    cursor.execute("select u_id from usuario where u_usuario = %s", (criptografar(usuario),))
     for i in cursor:
         id_usuario=i[0]
     
