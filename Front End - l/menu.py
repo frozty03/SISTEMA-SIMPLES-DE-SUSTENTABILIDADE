@@ -158,24 +158,33 @@ def login():
     usuario = input('* Usuário: ')
     senha = input('* Senha: ')
 
-    # verifica os usuarios
-    cursor.execute("select u_usuario,u_senha,u_nota from usuario")
+    # percorre por todos os usuarios
+    cursor.execute("SELECT u_usuario, u_senha, u_nota FROM usuario")
+    encontrado = False # para caso não ache usuário no bd
+
     for i in cursor:
-            usuario_bd_cripto = i[0]
-            senha_bd_cripto = i[1]
-
+        try:
             # descriptografa os dados do banco
-            usuario_bd = descriptografar(usuario_bd_cripto)
-            senha_bd = descriptografar(senha_bd_cripto)
+            usuario_bd = descriptografar(i[0])
+            senha_bd = descriptografar(i[1])
 
-            if usuario == usuario_bd and senha == senha_bd: # verifica senha e usuário
+            # Compara com as entradas do usuário
+            if usuario == usuario_bd and senha == senha_bd:
                 print(f' ✅ Login bem-sucedido! Bem-vindo, {usuario}!')
-                print('====================================================================================================')
-                cursor.fetchall() # limpando cursor
-                menu_login(usuario)  # iniciar o menu pós login
-            else:
-                print('* ❌ Erro: Usuário ou senha incorretos!')
-                print('====================================================================================================')
+                print(
+                    '====================================================================================================')
+                cursor.fetchall()  # limpando cursor
+                menu_login(usuario)
+                encontrado = True
+                break
+        except Exception as e:
+            print(f"Erro ao descriptografar: {e}")
+            continue
+
+    if not encontrado:
+        print('* ❌ Erro: Usuário ou senha incorretos!')
+        print('====================================================================================================')
+        input('Pressione ENTER para continuar...')
 
 def area_login():
     while True:
