@@ -18,7 +18,7 @@ mapeamento = {
     'k': 46, 'l': 47, 'm': 48, 'n': 49, 'o': 50, 'p': 51, 'q': 52, 'r': 53, 's': 54, 't': 55,
     'u': 56, 'v': 57, 'w': 58, 'x': 59, 'y': 60, 'z': 61,
     # símbolos especiais
-    '-': 62, '.': 63, ' ': 64, '$': 65, '/': 66, '+': 67, '%': 68
+    '-': 62, '.': 63, '%': 64, '$': 65, '/': 66, '+': 67, '!': 68
 }
 
 # para decodificação
@@ -27,69 +27,59 @@ inverso = {v: k for k, v in mapeamento.items()}
 # matriz de criptografia (precisa ser invertível módulo 69)
 A = np.array([[2, 3], [1, 4]])
 
-# função para calcular a matriz inversa modular
-def matriz_inversa_modular(matriz, modulo):
+# montar a matriz inversa no mod69
+def inversa_modular(matriz, modulo):
     det = int(np.round(np.linalg.det(matriz))) % modulo
     det_inverso = pow(det, -1, modulo)
-    matriz_adjunta = np.array([[matriz[1, 1], -matriz[0, 1]], [-matriz[1, 0], matriz[0, 0]]])
+    matriz_adjunta = np.array([[matriz[1, 1], -matriz[0, 1]],
+                               [-matriz[1, 0], matriz[0, 0]]])
     return (det_inverso * matriz_adjunta) % modulo
 
 def criptografar(texto):
-    # se comprimento ímpar, repete último caractere
+    # adiciona '!' se o comprimento do nome for ímpar
     if len(texto) % 2 != 0:
-        texto += texto[-1]
+        texto += '!'  # Adiciona '!' apenas internamente
+    
+    # converte os caracteres para números
+    I = [mapeamento[c] for c in texto if c in mapeamento]
 
-    # filtra caracteres que não estão no dicionario
-    caracteres_validos = [c for c in texto if c in mapeamento]
-    if len(caracteres_validos) != len(texto):
-        print("Aviso: Alguns caracteres foram ignorados por não estarem no dicionário")
+    # garante que I tem tamanho par
+    if len(I) % 2 != 0:
+        I.append(mapeamento['!'])  # Adiciona '!' se necessário
+    
+    # monta matriz 2xN
+    P = np.array([I[i::2] for i in range(2)])
 
-    # converter para números
-    I = [mapeamento[c] for c in caracteres_validos]
-
-    # criar matriz de pares
-    P = []
-    for i in range(len(I) // 2):
-        P.append([I[2 * i], I[2 * i + 1]])
-    P = np.array(P).T
-
-    # codificar
+    # codifica
     C = np.dot(A, P) % 69
 
-    # converter para texto
-    codificado = []
-    for col in C.T:
-        codificado.extend(col)
-    return ''.join([inverso[int(c)] for c in codificado])
+    # converte de volta para texto codificado
+    texto_codificado = ''.join([inverso[num] for num in C.flatten('F')])
+    return texto_codificado
 
 def descriptografar(codificado):
-    # verificação se é par
+    # verifica se é par
     if len(codificado) % 2 != 0:
         raise ValueError("Texto codificado deve ter comprimento par")
 
-    # converter para números
+    # converte para números
     I = [mapeamento[c] for c in codificado]
 
-    # criar matriz de pares
-    C = []
-    for i in range(len(I) // 2):
-        C.append([I[2 * i], I[2 * i + 1]])
-    C = np.array(C).T
+    # coloca em em matriz 2xN
+    C = np.array([I[i::2] for i in range(2)])
 
-    # calcular matriz inversa módulo 69 (AGORA CONSISTENTE)
-    AI = matriz_inversa_modular(A, 69)
-    P = np.dot(AI, C) % 69  # Usando módulo 69 aqui também
+    # decodifica
+    A_inv = inversa_modular(A, 69)
+    P = np.dot(A_inv, C) % 69
 
-    # converter para texto
-    decodificado = []
-    for col in P.T:
-        decodificado.extend(col)
+    # converte de volta para texto
+    texto_decodificado = ''.join([inverso[int(num)] for num in P.flatten('F')])
 
-    # remover adicional se for necessário
-    texto = ''.join([inverso[int(c)] for c in decodificado])
-    if len(texto) > 1 and texto[-1] == texto[-2]:
-        texto = texto[:-1]
-    return texto
+    # remove o '!' adicional se existir no final
+    if texto_decodificado.endswith('!'):
+        texto_decodificado = texto_decodificado[:-1]
+
+    return texto_decodificado
 
 def limpar_tela():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -117,10 +107,6 @@ print('=========================================================================
 print('| PARA CÁLCULO MAIS PRECISO, CONFIRA A ABA PARÂMETROS PARA REALIZAR AS MEDIÇÕES DE CONSUMO.        |')
 print('====================================================================================================')
 
-#apagar quando a integração estiver completa
-usuarios = {}  # simular bd
-registros = {}  # guarda valores em matrizes 2D. registros[chave][matriz][valor da matriz]
-
 nota_sus = 0 # média geral do usuário
 
 # ADICIONAR EMAIL P/ RECUPERAÇÃO DE SENHA
@@ -128,8 +114,22 @@ def cadastro():
     limpar_tela()
     print('\n                                              CADASTRO                                              ')
     print('====================================================================================================')
-    usuario = input('* Digite um nome de usuário: ')
-
+    Iusuario = input('* Digite um nome de usuário: ')
+    usuario=''
+    #verifica se os caracteres estão no mapeamento da criptografia ou não
+    for i in Iusuario:
+        #caso válido, é adicionado
+        if i in mapeamento and i!='!':
+            usuario+=i
+        #caso inválido, o cadastro não é efetuado
+        else:
+            print(f"Caracter: {i} não é válido")
+            return
+    
+    #garante que o usuário não é vazio
+    if usuario == '':
+        return
+    
     #verifica os usuarios
     cursor.execute("select u_usuario from usuario") 
     for i in cursor: #percorre o select
@@ -686,10 +686,3 @@ def Tabela_relatorio(usuario):
             return
     
 area_login()
-
-#CADASTRO DE INFORMAÇÕES: abrir parte de inserir as informações de cada parametro, calcular (usar a tabela de parametros que está no figma)
-#LISTA DE GRÁFICOS: colocar opções de período (gráficos da semana, do dia e do mês) e criar gráfico com base nos cadastros de informações
-#AÇÕES: mostrar as notas do último cadastro e recomendar ações para melhora com base nisso
-#RELATÓRIO: mostrar as notas dos 3 ultimos cadastros, simbolizar se melhorou ou se piorou
-#PARÂMETROS: colocar a tabela de parâmetros
-#HISTÓRICO DE CADASTROS: mostrar todos os outros cadastros e opção de editar informação1
