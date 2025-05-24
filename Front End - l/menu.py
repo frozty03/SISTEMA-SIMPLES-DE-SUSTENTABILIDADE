@@ -1,8 +1,9 @@
-from datetime import date #para pegar a data atual
+from datetime import date # obtém datas
 import os
-from tabulate import tabulate
-import mysql.connector
-import numpy as np
+from tabulate import tabulate # criação de tabelas no console
+import time # delay durante a execução do programa
+import mysql.connector # conexão com o bd e uso de SQL
+import numpy as np # utilização de matrizes 
 from math import gcd
 
 # dicionário para criptografia
@@ -82,7 +83,8 @@ def descriptografar(codificado):
     return texto_decodificado
 
 def limpar_tela():
-    os.system('cls' if os.name == 'nt' else 'clear')
+    time.sleep(1) # aguarda por 1 segundos
+    os.system('cls' if os.name == 'nt' else 'clear') #limpa o console
 
 conexao = mysql.connector.connect(
     host="localhost", #Usando a rede local
