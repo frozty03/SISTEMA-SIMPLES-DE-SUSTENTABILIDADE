@@ -1,9 +1,9 @@
-from datetime import date #para pegar a data atual
+from datetime import date # obtém datas
 import os
-from tabulate import tabulate
-import mysql.connector
-import numpy as np
-from math import gcd
+from tabulate import tabulate # criação de tabelas no console
+import time # delay durante a execução do programa
+import mysql.connector # conexão com o bd e uso de SQL
+import numpy as np # utilização de matrizes 
 
 # dicionário para criptografia
 mapeamento = {
@@ -82,7 +82,17 @@ def descriptografar(codificado):
     return texto_decodificado
 
 def limpar_tela():
-    os.system('cls' if os.name == 'nt' else 'clear')
+    time.sleep(1) # aguarda por 1 segundos
+    os.system('cls' if os.name == 'nt' else 'clear') #limpa o console
+
+conexao = mysql.connector.connect(
+    host="localhost", #Usando a rede local
+    user="root",
+    password="1234", #Trocar ??? quando for testar
+    database="pi1"
+)
+
+cursor = conexao.cursor()
 
 conexao = mysql.connector.connect(
     host="localhost", #Usando a rede local
@@ -684,5 +694,5 @@ def Tabela_relatorio(usuario):
             Tabela_relatorio(usuario)
         except:
             return
-    
+          
 area_login()
