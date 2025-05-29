@@ -4,7 +4,6 @@ from tabulate import tabulate # criação de tabelas no console
 import time # delay durante a execução do programa
 import mysql.connector # conexão com o bd e uso de SQL
 import numpy as np # utilização de matrizes 
-from math import gcd
 
 # dicionário para criptografia
 mapeamento = {
@@ -90,6 +89,15 @@ conexao = mysql.connector.connect(
     host="localhost", #Usando a rede local
     user="root",
     password="1234", #Trocar ??? quando for testar
+    database="pi1"
+)
+
+cursor = conexao.cursor()
+
+conexao = mysql.connector.connect(
+    host="localhost", #Usando a rede local
+    user="root",
+    password="???", #Trocar ??? quando for testar
     database="pi1"
 )
 
@@ -686,5 +694,5 @@ def Tabela_relatorio(usuario):
             Tabela_relatorio(usuario)
         except:
             return
-    
+          
 area_login()
